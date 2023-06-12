@@ -1,0 +1,40 @@
+{
+  "name": "@poly-engine/transform",
+  "version": "0.1.0-beta.1",
+  "description": "Transform module for poly-engine",
+  "main": "dist/main.js",
+  "module": "dist/module.js",
+  "types": "dist/types.d.ts",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "author": "huodianyan",
+  "license": "MIT",
+  "files": [
+    "dist/**/*"
+  ],
+  "keywords": [
+    "poly",
+    "transform"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "types": "jsdoc -c types.config.js && replace-in-file --configFile=types.config.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@poly-engine/core": "workspace:*",
+    "@poly-engine/math": "workspace:*"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.17.10",
+    "@babel/plugin-proposal-class-properties": "^7.16.7",
+    "@babel/preset-env": "^7.17.10",
+    "babel-jest": "^28.1.0",
+    "jest": "^28.1.0",
+    "rollup": "^2.38.0",
+    "tsd-jsdoc": "2.1.2",
+    "replace-in-file": "^6.1.0"
+  }
+}

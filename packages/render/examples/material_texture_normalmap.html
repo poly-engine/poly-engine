@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>poly - material_texture_normalmap</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: monospace;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #b {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      text-align: center;
+      z-index: 2;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="c"></canvas>
+</body>
+
+<script type="importmap">
+  {
+    "imports": {
+      "gl-matrix": "../node_modules/gl-matrix/esm/index.js",
+      "@poly-engine/core": "../node_modules/@poly-engine/core/dist/module.js",
+      "@poly-engine/transform": "../node_modules/@poly-engine/transform/dist/module.js",
+      "@poly-engine/asset": "../node_modules/@poly-engine/asset/dist/module.js"
+    }
+  }
+</script>
+<script type="module">
+  import { World, System, SystemGroupType, BaseModule, HtmlBaseModule } from "@poly-engine/core";
+  import { TransformModule } from "@poly-engine/transform";
+  import { AssetModule } from "@poly-engine/asset";
+  // import { RenderModule, VertexElementType, GeometryUtil, MeshTopology, TextureUtil, RenderQueue } from '../src/index.js';
+  import { RenderModule, VertexElementType, GeometryUtil, MeshTopology, TextureUtil, RenderQueueType, Texture2DLoader } from '../dist/module.js';
+  import { BaseMaterialSystem, PhongMaterialSystem, PhongBaseMaterialSystem } from '../dist/module.js';
+
+  import { quat, vec3 } from "gl-matrix";
+  import { GUI } from './libs/lil-gui.esm.min.js';
+
+  class RotateSystem extends System {
+    constructor(world) {
+      super(world);
+      this.groupId = SystemGroupType.Update;
+      this.index = 200;
+
+      // this.em = this.world.entityManager;
+      // this.queryManager = this.world.queryManager;
+
+      this.com_mesh = this.em.getComponentId('MeshRenderer');
+      this.com_directLight = this.em.getComponentId('DirectLight');
+      this.com_transform = this.em.getComponentId('Transform');
+      this.com_transformDirty = this.em.getComponentId('TransformDirty');
+
+      this.que_meshTransform = this.qm.createQuery({
+        all: [this.com_transform, this.com_directLight],
+      });
+    }
+    init() {
+    }
+    _update(delta) {
+      this.que_meshTransform.forEach(entity => {
+        let transform = this.em.getComponent(entity, com_transform);
+        quat.rotateY(transform.rotation, transform.rotation, delta);
+        this.defer(() => {
+          this.em.setComponent(entity, this.com_transformDirty);
+        });
+      });
+    }
+  }
+
+  const canvasElement = document.querySelector("#c");
+  const world = new World();
+  world.moduleManager.addModule(new HtmlBaseModule(world, canvasElement));
+  world.moduleManager.addModule(AssetModule);
+  world.moduleManager.addModule(TransformModule);
+  world.moduleManager.addModule(RenderModule);
+  const rotateSystem = world.systemManager.addSystem(RotateSystem, true);
+
+  const em = world.entityManager;
+  const lm = world.loadManager;
+  // const com_canvas = em.getComponentId('Canvas');
+  const com_glState = em.getComponentId('GlState');
+  const com_transform = em.getComponentId('Transform');
+  const com_camera = em.getComponentId('Camera');
+  // const com_cameraState = em.getComponentId('CameraState');
+  const com_shader = em.getComponentId('Shader');
+  // const com_shaderState = em.getComponentId('ShaderState');
+  const materialCom = em.getComponentId('Material');
+  const baseMaterialCom = em.getComponentId('BaseMaterial');
+  const unlitMaterialCom = em.getComponentId('UnlitMaterial');
+  const phongBaseMaterialCom = em.getComponentId('PhongBaseMaterial');
+  const phongMaterialCom = em.getComponentId('PhongMaterial');
+  // const com_uniformData = em.getComponentId('UniformData');
+  const com_texture = em.getComponentId('Texture');
+  const boxGeometryCom = em.getComponentId('BoxGeometry');
+  const sphereGeometryCom = em.getComponentId('SphereGeometry');
+  const com_geometry = em.getComponentId('Geometry');
+  const com_geometryState = em.getComponentId('GeometryState');
+  const meshRendererCom = em.getComponentId('MeshRenderer');
+  // const com_unlitData = em.getComponentId('UnlitData');
+  const lightCom = em.getComponentId('Light');
+  const directLightCom = em.getComponentId('DirectLight');
+
+  const assetCom = em.getComponentId('Asset');
+  const phoneMaterialSys = world.systemManager.getSystem(PhongMaterialSystem);
+  const baseMaterialSys = world.systemManager.getSystem(BaseMaterialSystem);
+  const phongBaseMaterialSys = world.systemManager.getSystem(PhongBaseMaterialSystem);
+
+  // //add canvas
+  // let canvasEntity = em.createEntity();
+  // em.setComponentByArgs(canvasEntity, com_canvas, '#c');
+
+  //add light
+  let light1Ent = em.createEntity();
+  let light1Tra = em.setComponentByArgs(light1Ent, com_transform, [0, 0, 0], quat.rotateY([0, 0, 0, 1], [0, 0, 0, 1], Math.PI / 4));
+  em.setComponent(light1Ent, lightCom);
+  em.setComponent(light1Ent, directLightCom);
+
+  //add camera
+  let cameraEntity = em.createEntity();
+  // let transform = em.setComponentByArgs(cameraEntity, com_transform, [-1, 0, 1], quat.rotateY([0, 0, 0, 1], [0, 0, 0, 1], -Math.PI / 4));
+  let transform = em.setComponentByArgs(cameraEntity, com_transform, [0, 10, 20]);
+  let camera = em.setComponent(cameraEntity, com_camera);
+  camera.fovY = 1;
+
+  // const textureLoader = new Texture2DLoader(world.assetManager);
+  // const tex1Data = await textureLoader.loadAsync("./resources/normal/a.png");
+  // world.assetManager.addAssetData(tex1Data);
+  // const tex2Data = await textureLoader.loadAsync('./resources/normal/a_n.png');
+  // world.assetManager.addAssetData(tex2Data);
+  const res = await lm.load([
+    {
+      type: "Texture2D",
+      url: "https://gw.alipayobjects.com/mdn/rms_7c464e/afts/img/A*g_HIRqQdNUcAAAAAAAAAAAAAARQnAQ",
+    },
+    {
+      type: "Texture2D",
+      url: "https://gw.alipayobjects.com/mdn/rms_7c464e/afts/img/A*H7nMRY2SuWcAAAAAAAAAAAAAARQnAQ",
+    },
+    {
+      type: "Prefab",
+      url: "https://gw.alipayobjects.com/os/bmw-prod/72a8e335-01da-4234-9e81-5f8b56464044.gltf",
+    },
+    {
+      type: "Prefab",
+      url: "https://gw.alipayobjects.com/os/OasisHub/267000040/9994/%25E5%25BD%2592%25E6%25A1%25A3.gltf",
+    }
+  ]);
+  console.log(res[3]);
+  const meshData0 = res[2].meshes[0][0];
+  const meshData1 = res[2].meshes[1][0];
+  const meshData2 = res[2].meshes[2][0];
+  world.assetManager.addAssetData(meshData0);
+  world.assetManager.addAssetData(meshData1);
+  world.assetManager.addAssetData(meshData2);
+  const texData0 = res[3].textures[0];
+  world.assetManager.addAssetData(texData0);
+
+  //add material 
+  let mat1Entity = em.createEntity();
+  em.setComponentByArgs(mat1Entity, assetCom, 'mat1', 'Material');
+  em.setComponentByArgs(mat1Entity, materialCom, 'mat1', 'sha_phong');
+  const baseMat = em.setComponentByArgs(mat1Entity, baseMaterialCom, 'mat1');
+  const phongBaseMat = em.setComponentByArgs(mat1Entity, phongBaseMaterialCom, 'mat1');
+  const phongMat = em.setComponentByArgs(mat1Entity, phongMaterialCom, 'mat1');
+  // bpMaterial.baseColor=[1,0,0,1];
+  // bpMaterial.specularColor=[1,0,0,1];
+  // baseMat.baseTextureRef = res[0].Asset.id;
+  baseMat.baseTextureRef = texData0.Asset.id;
+  phongBaseMat.normalTextureRef = res[1].Asset.id;
+  phongMat.shininess = 1000;
+
+  //add box geometry
+  let geo1Entity = em.createEntity();
+  em.setComponentByArgs(geo1Entity, assetCom, 'geo1', 'Geometry');
+  em.setComponentByArgs(geo1Entity, boxGeometryCom, 1, 1, 1);
+
+  // //add box geometry
+  // let geo2Entity = em.createEntity();
+  // em.setComponentByArgs(geo2Entity, assetCom, 'geo2', 'Geometry');
+  // em.setComponentByArgs(geo2Entity, sphereGeometryCom, 0.5, 20, 10);
+
+  //add mesh1
+  let mesh0Entity = em.createEntity();
+  transform = em.setComponent(mesh0Entity, com_transform);
+  em.setComponentByArgs(mesh0Entity, meshRendererCom, meshData0.Asset.id, 'mat1');
+  // em.setComponentByArgs(mesh1Entity, meshRendererCom, "geo1", 'mat1');
+  let mesh1Entity = em.createEntity();
+  transform = em.setComponent(mesh1Entity, com_transform);
+  em.setComponentByArgs(mesh1Entity, meshRendererCom, meshData1.Asset.id, 'mat1');
+  let mesh2Entity = em.createEntity();
+  transform = em.setComponent(mesh2Entity, com_transform);
+  em.setComponentByArgs(mesh2Entity, meshRendererCom, meshData2.Asset.id, 'mat1');
+
+  // //add mesh2
+  // let mesh2Entity = em.createEntity();
+  // transform = em.setComponentByArgs(mesh2Entity, com_transform, [0, 0, 2]);
+  // em.setComponentByArgs(mesh2Entity, meshRendererCom, 'geo2', 'mat_unlit');
+
+
+  let lastTime;
+  function update(time) {
+    if (lastTime === undefined)
+      lastTime = time;
+    let delta = (time - lastTime) / 1000;
+    lastTime = time;
+    world.update(delta);
+    requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+
+  console.log(world);
+
+  const gui = new GUI();
+  function addGUI() {
+    const state = {
+      baseColor: [1, 1, 1],
+      specularColor: [255, 255, 255],
+      shininess: 64,
+      normalIntensity: 1,
+      isTransparent: false,
+      opacity: 1,
+    };
+
+    gui.addColor(state, "baseColor").onChange((v) => {
+      baseMaterialSys.setBaseColor(mat1Entity, [v[0], v[1], v[2], state.opacity]);
+    });
+    gui.add(state, "shininess", 0, 100).onChange((v) => {
+      phoneMaterialSys.setShininess(mat1Entity, v);
+    });
+    gui.add(state, "normalIntensity", 0, 1, 0.1).onChange((v) => {
+      phongBaseMaterialSys.setNormalIntensity(mat1Entity, v);
+    });
+  }
+  addGUI();
+
+</script>
+
+</html>

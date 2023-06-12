@@ -1,0 +1,19 @@
+{
+  "name": "poly-engine-root",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "rollup -c",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.17.10",
+    "@babel/plugin-proposal-class-properties": "^7.16.7",
+    "@babel/preset-env": "^7.17.10",
+    "babel-jest": "^28.1.0",
+    "jest": "^28.1.0",
+    "rollup": "^2.38.0",
+    "tsd-jsdoc": "2.1.2",
+    "replace-in-file": "^6.1.0",
+    "gl-matrix": "^3.4.3"
+  }
+}

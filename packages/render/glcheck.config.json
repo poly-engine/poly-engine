@@ -1,0 +1,6 @@
+{
+    "assetDir": "glcheck-tests/assets",
+    "unitTests": "glcheck-tests/unit-tests/*.js",
+    "referenceImageDir": "glcheck-tests/reference-images",
+    "coverageFiles": "src/*.js"
+}

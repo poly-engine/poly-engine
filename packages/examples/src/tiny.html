@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>poly - tiny</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: monospace;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="c"></canvas>
+</body>
+<script type="shader/vs" id="vs">
+  attribute vec4 position;
+
+  void main() {
+    gl_Position = position;
+  }
+</script>
+<script type="shader/fs" id="fs">
+  precision mediump float;
+
+  uniform vec2 resolution;
+  uniform float time;
+  
+  void main() {
+    vec2 uv = gl_FragCoord.xy / resolution;
+    float color = 0.0;
+    // lifted from glslsandbox.com
+    color += sin( uv.x * cos( time / 3.0 ) * 60.0 ) + cos( uv.y * cos( time / 2.80 ) * 10.0 );
+    color += sin( uv.y * sin( time / 2.0 ) * 40.0 ) + cos( uv.x * sin( time / 1.70 ) * 40.0 );
+    color += sin( uv.x * sin( time / 1.0 ) * 10.0 ) + sin( uv.y * sin( time / 3.50 ) * 80.0 );
+    color *= sin( time / 10.0 ) * 0.5;
+  
+    gl_FragColor = vec4( vec3( color * 0.5, sin( color + time / 2.5 ) * 0.75, color ), 1.0 );
+  }
+</script>
+<script type="module">
+  import { World, mat4, vec3, SystemGroupType } from "../node_modules/@poly-engine/core/dist/module.js";
+  import * as transformModule from "../node_modules/@poly-engine/transform/dist/module.js";
+  import * as renderModule from '../src/index.js';
+
+  let world = new World();
+  world.addModule('mod_tranform', transformModule);
+  world.addModule('mod_render', renderModule);
+
+  let vsSource = document.getElementById("vs").text.trim();
+  let fsSource = document.getElementById("fs").text.trim();
+
+  // function createTiny() {
+  //   return { shaderEntity: -1 };
+  // }
+  const com_tiny = world.registerComponent('com_tiny', {});
+  const que_tiny = world.createQuery('que_tiny', { all: [com_tiny] });
+  function updateTiny(world, delta, system) {
+    let glState = world.getSingleton(world.com_glState);
+    if (!glState)
+      return;
+    const gl = glState.gl;
+
+    gl.viewport(0, 0, glState.width, glState.height);
+    // const uniformData = {
+    //   time: delta,
+    //   resolution: [glState.width, glState.height],
+    // };
+    que_tiny.forEach(entity => {
+      let tiny = com_tiny.get(entity);
+      const uniformData = tiny.uniformData;
+      uniformData.time = delta;
+      uniformData.resolution = [glState.width, glState.height];
+      let shaderState = world.com_shaderState.get(tiny.shaderEntity);
+      gl.useProgram(shaderState.program);
+      renderModule.uploadUniformData(world, glState, shaderState, uniformData);
+      renderModule.bindGeometry(world, glState, shaderState, tiny.geometryEntity);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    })
+
+  }
+  const sys_tinyRenderer = world.addSystem("sys_tinyRenderer", updateTiny, {
+    groupId: SystemGroupType.RenderUpdate,
+    index: 141
+  });
+
+  let json = {
+    entities: [
+      //canvas
+      {
+        id: 0,
+        com_canvas: {
+          id: '#c'
+        }
+      },
+      //shader
+      {
+        id: 1,
+        com_shader: {
+          id: 'test',
+          vertexSource: vsSource,
+          fragmentSource: fsSource
+        }
+      },
+      //geometry
+      {
+        id: 2,
+        com_geometry: {
+          id: 'test',
+          vertexBuffers: [
+            {
+              type: renderModule.VertexElementType.Float,
+              stride: 3 * 4,
+              data: [-1, -1, 0, 1, -1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0]
+            },
+          ],
+          vertexElements: [
+            {
+              index: 0,
+              name: 'position',
+              type: renderModule.VertexElementType.Float,
+              size: 3,
+              offset: 0,
+            },
+          ],
+          count: 6
+        }
+      },
+      //mesh
+      {
+        id: 3,
+        com_tiny: {
+          shaderEntity: 1,
+          geometryEntity: 2,
+          uniformData: {}
+        }
+      },
+    ]
+  };
+  world.createEntities(json.entities);
+
+  function update(time) {
+    world.update(time * 0.001);
+    requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+
+  console.log(world);
+</script>
+
+</html>

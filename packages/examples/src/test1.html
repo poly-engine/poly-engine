@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>poly - tiny</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: monospace;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #b {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      text-align: center;
+      z-index: 2;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="c"></canvas>
+</body>
+<script type="shader/vs" id="vs">
+  #version 300 es
+  
+  layout(location=0) in vec4 position;
+
+  void main() {
+      gl_Position = position;
+  }
+</script>
+<script type="shader/fs" id="fs">
+  #version 300 es
+  precision highp float;
+  
+  uniform vec4 color;
+  
+  out vec4 fragColor;
+  void main() {
+    fragColor = color;
+  }
+</script>
+<!-- <script src="../node_modules/@poly-engine/core/dist/main.js"></script>
+<script src="../node_modules/@poly-engine/transform/dist/main.js"></script>
+<script src="../dist/main.js"></script> -->
+<script type="module">
+  // let { World, mat4, vec3 } = core;
+  // let transformModule = transform;
+  // let renderModule = render;
+  import { World, mat4, Vec3 } from "../node_modules/@poly-engine/core/dist/module.js";
+  import { TransformModule } from "../node_modules/@poly-engine/transform/dist/module.js";
+  import { RenderModule, VertexElementType } from '../src/index.js';
+
+  const world = new World();
+  world.moduleManager.addModule('mod_tranform', TransformModule);
+  world.moduleManager.addModule('mod_render', RenderModule);
+
+  const em = world.entityManager;
+  const com_canvas = em.getComponentId('com_canvas');
+  const com_glState = em.getComponentId('com_glState');
+  const com_transform = em.getComponentId('com_transform');
+  const com_camera = em.getComponentId('com_camera');
+  const com_cameraState = em.getComponentId('com_cameraState');
+  const com_shader = em.getComponentId('com_shader');
+  const com_shaderState = em.getComponentId('com_shaderState');
+  const com_material = em.getComponentId('com_material');
+  const com_geometry = em.getComponentId('com_geometry');
+  const com_geometryState = em.getComponentId('com_geometryState');
+  const com_mesh = em.getComponentId('com_mesh');
+  const com_unlitData = em.getComponentId('com_unlitData');
+
+  let vsSource = document.getElementById("vs").text.trim();
+  let fsSource = document.getElementById("fs").text.trim();
+
+  //add canvas
+  let canvasEntity = em.createEntity();
+  em.setComponentByArgs(canvasEntity, com_canvas, '#c');
+
+  //add camera
+  let cameraEntity = em.createEntity();
+  let transform = em.setComponentByArgs(cameraEntity, com_transform, [0, 0, -3]);
+  let camera = em.setComponent(cameraEntity, com_camera);
+
+  //add shader
+  let shaderEntity = em.createEntity();
+  em.setComponentByArgs(shaderEntity, com_shader, 'test', vsSource, fsSource);
+
+  //add material 
+  let materialEntity = em.createEntity();
+  em.setComponentByArgs(materialEntity, com_material, 'test', shaderEntity);
+  let unlitData = em.setComponent(materialEntity, com_unlitData);
+  unlitData.uniforms.color = [0,0,1,1];
+
+  //add geometry
+  let geometryEntity = em.createEntity();
+  let geometry = em.createComponent(com_geometry, 'triangle');
+  geometry.vertexBuffers.push({
+    // type: VertexElementType.Float,
+    stride: 6 * 4,
+    data: [
+      -0.5, -0.5, 0, 1, 0, 0,
+      0.5, -0.5, 0, 0, 1, 0,
+      0.0, 0.5, 0, 0, 0, 1,
+    ],
+    elements: [
+      { name: 'position', size: 3, },
+      // { name: 'color', size: 3, offset: 3 * 4, }
+    ]
+  });
+  // geometry.vertexElements.push({
+  //   index: 0,
+  //   name: 'position',
+  //   // type: VertexElementType.Float,
+  //   size: 3,
+  //   // offset: 0,
+  // });
+  // geometry.vertexElements.push({
+  //   index: 0,
+  //   name: 'color',
+  //   // type: VertexElementType.UByte,
+  //   size: 3,
+  //   offset: 3 * 4,
+  //   // normalize: true
+  // });
+
+  // geometry.vertexBuffers.push({
+  //   type: VertexElementType.Float,
+  //   stride: 3 * 4,
+  //   data: [
+  //     -0.5, -0.5, 0,
+  //     0.5, -0.5, 0,
+  //     0.0, 0.5, 0,
+  //   ]
+  // });
+  // geometry.vertexBuffers.push({
+  //   type: VertexElementType.UByte,
+  //   stride: 3 * 1,
+  //   data: [
+  //     255, 0, 0,
+  //     0, 255, 0,
+  //     0, 0, 255
+  //   ]
+  // });
+  // geometry.vertexElements.push({
+  //   index: 0,
+  //   name: 'position',
+  //   // type: VertexElementType.Float,
+  //   size: 3,
+  //   // offset: 0,
+  // });
+  // geometry.vertexElements.push({
+  //   index: 1,
+  //   name: 'color',
+  //   // type: VertexElementType.UByte,
+  //   size: 3,
+  //   // offset: 0,
+  //   normalize: true
+  // });
+  geometry.count = 3;
+  em.setComponent(geometryEntity, com_geometry, geometry);
+
+  //add mesh
+  let meshEntity = em.createEntity();
+  transform = em.setComponent(meshEntity, com_transform);
+  em.setComponentByArgs(meshEntity, com_mesh, geometryEntity, materialEntity);
+
+  function update(time) {
+    world.update(time);
+    requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+
+  console.log(world);
+</script>
+
+</html>

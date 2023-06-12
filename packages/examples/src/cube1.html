@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>poly - cube</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: monospace;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #b {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      text-align: center;
+      z-index: 2;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="c"></canvas>
+</body>
+<script type="shader/vs" id="vs">
+  #version 300 es
+
+  uniform mat4 pv;
+  uniform mat4 world;
+
+  layout(location=0) in vec4 a_position;
+
+  void main() {
+      gl_Position = pv * world * a_position;
+  }
+</script>
+<script type="shader/fs" id="fs">
+  #version 300 es
+
+  precision mediump float;
+
+  uniform vec4 color;
+
+  out vec4 frag_color;
+
+  void main() {
+      frag_color = color;
+  }
+</script>
+<script type="shader/vs" id="vs1">
+  #version 300 es
+
+  uniform mat4 pv;
+  uniform mat4 world;
+
+  layout(location=0) in vec4 a_position;
+  layout(location=1) in vec2 a_uv;
+  out vec2 vert_texcoord;
+
+  void main() {
+    vec4 a_pos = world * a_position;
+    gl_Position = pv * a_pos;
+
+    vert_texcoord = a_uv;
+  }
+</script>
+<script type="shader/fs" id="fs1">
+  #version 300 es
+
+  precision mediump float;
+
+  uniform sampler2D u_texture;
+  uniform vec4 u_color;
+
+  in vec2 vert_texcoord;
+  out vec4 frag_color;
+
+  void main() {
+      frag_color = u_color * texture(u_texture, vert_texcoord);
+  }
+
+</script>
+<script type="importmap">
+  {
+    "imports": {
+      "gl-matrix": "../node_modules/gl-matrix/esm/index.js",
+      "@poly-engine/core": "../node_modules/@poly-engine/core/dist/module.js",
+      "@poly-engine/transform": "../node_modules/@poly-engine/transform/dist/module.js"
+    }
+  }
+</script>
+<script type="module">
+  import { World, System, SystemGroupType } from "@poly-engine/core";
+  import { TransformModule } from "@poly-engine/transform";
+  import { RenderModule, VertexElementType, GeometryUtil, MeshTopology, TextureUtil, RenderQueue } from '../src/index.js';
+  import { quat, vec3 } from "gl-matrix";
+
+  class RotateSystem extends System {
+    constructor() {
+      super();
+      this.groupId = SystemGroupType.Update;
+      this.index = 200;
+    }
+    init() {
+      this.em = this.world.entityManager;
+      this.queryManager = this.world.queryManager;
+
+      this.com_mesh = this.em.getComponentId('MeshRenderer');
+      this.com_transform = this.em.getComponentId('Transform');
+      this.com_transformDirty = this.em.getComponentId('TransformDirty');
+
+      this.que_meshTransform = this.queryManager.createQuery({
+        all: [this.com_transform, this.com_mesh],
+      });
+    }
+    _update(delta) {
+      this.que_meshTransform.forEach(entity => {
+        let transform = this.em.getComponent(entity, com_transform);
+        quat.rotateY(transform.rotation, transform.rotation, delta);
+        this.defer(() => {
+          this.em.setComponent(entity, this.com_transformDirty);
+        });
+      });
+    }
+  }
+
+  const world = new World();
+  world.moduleManager.addModule(TransformModule);
+  world.moduleManager.addModule(RenderModule);
+  const rotateSystem = world.systemManager.addSystem(RotateSystem);
+
+  const em = world.entityManager;
+  const com_canvas = em.getComponentId('Canvas');
+  const com_glState = em.getComponentId('GlState');
+  const com_transform = em.getComponentId('Transform');
+  const com_camera = em.getComponentId('Camera');
+  const com_cameraState = em.getComponentId('CameraState');
+  const com_shader = em.getComponentId('Shader');
+  const com_shaderState = em.getComponentId('ShaderState');
+  const com_material = em.getComponentId('Material');
+  // const com_uniformData = em.getComponentId('UniformData');
+  const com_texture = em.getComponentId('Texture');
+  const boxGeometryCom = em.getComponentId('BoxGeometry');
+  const sphereGeometryCom = em.getComponentId('SphereGeometry');
+  const com_geometry = em.getComponentId('Geometry');
+  const com_geometryState = em.getComponentId('GeometryState');
+  const com_mesh = em.getComponentId('MeshRenderer');
+  const com_unlitData = em.getComponentId('UnlitData');
+
+  let vsSource = document.getElementById("vs1").text.trim();
+  let fsSource = document.getElementById("fs1").text.trim();
+
+  //add canvas
+  let canvasEntity = em.createEntity();
+  em.setComponentByArgs(canvasEntity, com_canvas, '#c');
+
+  //add camera
+  let cameraEntity = em.createEntity();
+  let transform = em.setComponentByArgs(cameraEntity, com_transform, [-3, 0, 3], quat.rotateY([0, 0, 0, 1], [0, 0, 0, 1], -Math.PI / 4));
+  let camera = em.setComponent(cameraEntity, com_camera);
+  camera.fovY = 1;
+
+  //add texture
+  let tex1Entity = em.createEntity();
+  let imageElement = await TextureUtil.loadImage('./textures/checker1.png');
+  em.setComponentByArgs(tex1Entity, com_texture, 'tex1', imageElement);
+  //add texture
+  let tex2Entity = em.createEntity();
+  imageElement = await TextureUtil.loadImage('./textures/webgl-logo.png');
+  em.setComponentByArgs(tex2Entity, com_texture, 'tex2', imageElement);
+
+  //add shader
+  let shaderEntity = em.createEntity();
+  em.setComponentByArgs(shaderEntity, com_shader, 'test', vsSource, fsSource);
+
+  //add material 
+  let mat1Entity = em.createEntity();
+  em.setComponentByArgs(mat1Entity, com_material, 'mat1', shaderEntity, RenderQueue.Blend);
+  let unlitData = em.setComponent(mat1Entity, com_unlitData);
+  unlitData.uniforms.u_color = [0, 1, 1, 0.5];
+  unlitData.uniforms.u_texture = tex1Entity;
+  let mat2Entity = em.createEntity();
+  em.setComponentByArgs(mat2Entity, com_material, 'mat2', shaderEntity, RenderQueue.Opaque);
+  unlitData = em.setComponent(mat2Entity, com_unlitData);
+  unlitData.uniforms.u_color = [0.5, 0.5, 0.5, 0.5];
+  unlitData.uniforms.u_texture = tex2Entity;
+
+  //add box geometry
+  let boxGeometryEntity = em.createEntity();
+  em.setComponentByArgs(boxGeometryEntity, boxGeometryCom, 1, 1, 0.5);
+
+  //add box geometry
+  let sphereGeometryEntity = em.createEntity();
+  em.setComponentByArgs(sphereGeometryEntity, sphereGeometryCom, 1, 20, 10);
+
+  // //add geometry
+  // let boxData = GeometryUtil.createBoxData();
+  // // let boxData = GeometryUtil.createSphereData();
+  // let geometryEntity = em.createEntity();
+  // let geometry = em.createComponent(com_geometry, 'cube');
+  // geometry.vertexBuffers.push({
+  //   data: boxData.vertices,
+  //   // data: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
+  //   elements: [{ name: 'a_position', size: 3 }]
+  // });
+  // geometry.vertexBuffers.push({
+  //   data: boxData.normals,
+  //   // data: [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1],
+  //   elements: [{ name: 'a_normal', size: 3 }]
+  // });
+  // geometry.vertexBuffers.push({
+  //   data: boxData.uvs,
+  //   // data: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
+  //   elements: [{ name: 'a_uv', size: 2 }]
+  // });
+  // geometry.indexBuffer = boxData.indices;
+  // // geometry.indexBuffer = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23],
+  // // geometry.count = 3;
+  // // geometry.mode = MeshTopology.Lines;
+  // em.setComponent(geometryEntity, com_geometry, geometry);
+
+  //add mesh1
+  let mesh1Entity = em.createEntity();
+  transform = em.setComponent(mesh1Entity, com_transform);
+  em.setComponentByArgs(mesh1Entity, com_mesh, boxGeometryEntity, mat1Entity);
+
+  //add mesh2
+  let mesh2Entity = em.createEntity();
+  transform = em.setComponentByArgs(mesh2Entity, com_transform, [0, 0, 1]);
+  em.setComponentByArgs(mesh2Entity, com_mesh, sphereGeometryEntity, mat2Entity);
+
+
+  let lastTime;
+  function update(time) {
+    if (lastTime === undefined)
+      lastTime = time;
+    let delta = (time - lastTime) / 1000;
+    lastTime = time;
+    world.update(delta);
+    requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+
+  console.log(world);
+</script>
+
+</html>

@@ -1,0 +1,33 @@
+{
+  "name": "@poly-engine/examples",
+  "version": "0.1.0-beta.3",
+  "description": "PolyEngine examples",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "author": "huodianyan",
+  "license": "MIT",
+  "files": [
+    "dist/**/*"
+  ],
+  "keywords": [
+    "poly",
+    "ecs",
+    "examples"
+  ],
+  "scripts": {
+    "types": "jsdoc -c types.config.js && replace-in-file --configFile=types.config.js",
+    "docs": "jsdoc -d docs -r src",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@poly-engine/core": "workspace:*",
+    "@poly-engine/asset": "workspace:*",
+    "@poly-engine/transform": "workspace:*",
+    "@poly-engine/input": "workspace:*",
+    "@poly-engine/render": "workspace:*",
+    "@poly-engine/math": "workspace:*",
+    "@poly-engine/controls": "workspace:*"
+  }
+}

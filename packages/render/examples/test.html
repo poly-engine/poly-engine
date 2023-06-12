@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>poly - tiny</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: monospace;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #b {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      text-align: center;
+      z-index: 2;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="c"></canvas>
+</body>
+<script type="shader/vs" id="vs">
+  #version 300 es
+  
+  layout(location=0) in vec4 position;
+  layout(location=1) in vec3 color;
+  
+  out vec3 vColor; 
+  void main() {
+      vColor = color;
+      gl_Position = position;
+  }
+</script>
+<script type="shader/fs" id="fs">
+  #version 300 es
+  precision highp float;
+  
+  in vec3 vColor;
+  
+  out vec4 fragColor;
+  void main() {
+      fragColor = vec4(vColor, 1.0);
+  }
+</script>
+<!-- <script src="../node_modules/@poly-engine/core/dist/main.js"></script>
+<script src="../node_modules/@poly-engine/transform/dist/main.js"></script>
+<script src="../dist/main.js"></script> -->
+<script type="module">
+  // let { World, mat4, vec3 } = core;
+  // let transformModule = transform;
+  // let renderModule = render;
+  import { World, mat4, vec3 } from "../node_modules/@poly-engine/core/dist/module.js";
+  import * as transformModule from "../node_modules/@poly-engine/transform/dist/module.js";
+  import * as renderModule from '../src/index.js';
+
+  let world = new World();
+  world.addModule('mod_tranform', transformModule);
+  world.addModule('mod_render', renderModule);
+
+  const com_canvas = world.com_canvas;
+  const com_glState = world.com_glState;
+  const com_transform = world.com_transform;
+  const com_camera = world.com_camera;
+  const com_cameraState = world.com_cameraState;
+  const com_shader = world.com_shader;
+  const com_shaderState = world.com_shaderState;
+  const com_material = world.com_material;
+  const com_geometry = world.com_geometry;
+  const com_geometryState = world.com_geometryState;
+  const com_mesh = world.com_mesh;
+  const com_meshRenderer = world.com_meshRenderer;
+
+  let vsSource = document.getElementById("vs").text.trim();
+  let fsSource = document.getElementById("fs").text.trim();
+
+  let json = {
+    entities: [
+      //canvas
+      {
+        id: 0,
+        com_canvas: {
+          id: '#c'
+        }
+      },
+      //camera
+      {
+        id: 1,
+        com_transform: {
+          position: [0, 0, -3]
+        },
+        com_camera: {
+          clearColor: [0, 0, 0, 1]
+        }
+      },
+      //shader
+      {
+        id: 2,
+        com_shader: {
+          id: 'test',
+          vertexSource: vsSource,
+          fragmentSource: fsSource
+        }
+      },
+      //material
+      {
+        id: 3,
+        com_material: {
+          id: 'test',
+          shaderEntity: 2
+        }
+      },
+      //geometry
+      {
+        id: 4,
+        com_geometry: {
+          id: 'test',
+          vertexBuffers: [
+            {
+              type: renderModule.VertexElementType.Float,
+              stride: 2 * 4,
+              data: [
+                -0.5, -0.5,
+                0.5, -0.5,
+                0.0, 0.5,
+              ]
+            },
+            {
+              type: renderModule.VertexElementType.UByte,
+              stride: 3 * 1,
+              data: [
+                255, 0, 0,
+                0, 255, 0,
+                0, 0, 255
+              ]
+            },
+          ],
+          vertexElements: [
+            {
+              index: 0,
+              name: 'position',
+              // stride: 2 * 4,
+              type: renderModule.VertexElementType.Float,
+              size: 2,
+              offset: 0,
+            },
+            {
+              index: 1,
+              name: 'color',
+              // stride: 3 * 1,
+              type: renderModule.VertexElementType.UByte,
+              size: 3,
+              offset: 0,
+              normalize: true
+            }
+          ],
+          count: 3
+        }
+      },
+      //mesh
+      {
+        id: 5,
+        com_mesh: {
+          materialEntity: 3,
+          geometryEntity: 4,
+        }
+      },
+    ]
+  };
+  console.log(JSON.stringify(json));
+  json = JSON.parse(JSON.stringify(json));
+  world.createEntities(json.entities);
+
+  function update(time) {
+    world.update(time);
+    requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+
+  console.log(world);
+</script>
+
+</html>
