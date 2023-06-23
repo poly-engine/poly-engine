@@ -2,7 +2,7 @@ import { System, SystemGroupType } from "@poly-engine/core";
 import { mat4, vec3 } from "@poly-engine/math";
 import { ControlHandlerType } from "./ControlHandlerType";
 import { Spherical } from "./Spherical";
-import { InputDeviceType, MouseControl, MouseDevice } from "@poly-engine/input";
+import { InputDeviceType, MouseControl, MouseDevice, TouchControl } from "@poly-engine/input";
 
 const STATE = {
     NONE: -1,
@@ -43,6 +43,7 @@ export class OrbitControlSystem extends System {
         this.inputManager = world.inputManager;
         this.transformManager = world.transformManager;
         this.mouseDevice = this.inputManager.getDevice(InputDeviceType.Mouse);
+        this.touchDevice = this.inputManager.getDevice(InputDeviceType.Touch);
 
         this._tempVec3 = [0, 0, 0];
         this._tempVec31 = [0, 0, 0];
@@ -97,32 +98,78 @@ export class OrbitControlSystem extends System {
 
         const mouseDevice = this.mouseDevice;
         // this.inputManager.isActionPerformed(this.moveAction);
-        let pos = mouseDevice.getValue(MouseControl.Pos);
+        // let pos = mouseDevice.getValue(MouseControl.Pos);
+        let pos = null;
+        let panPos = null;
 
         if (mouseDevice.isButtonDown(MouseControl.Left)) {
+            pos = mouseDevice.getValue(MouseControl.Pos);
             controlState.state |= ControlHandlerType.ROTATE;
             controlState.startX = pos[0];
             controlState.startY = pos[1];
             // controlState.state = STATE.MOVE;
         }
-        else if (mouseDevice.isButtonUp(MouseControl.Left)){
+        else if (mouseDevice.isButtonUp(MouseControl.Left)) {
             controlState.state &= ~ControlHandlerType.ROTATE;
         }
+        if (mouseDevice.isButtonHeld(MouseControl.Left)) {
+            pos = mouseDevice.getValue(MouseControl.Pos);
+        }
         if (mouseDevice.isButtonDown(MouseControl.Right)) {
+            panPos = mouseDevice.getValue(MouseControl.Pos);
             controlState.state |= ControlHandlerType.PAN;
-            controlState.startPanX = pos[0];
-            controlState.startPanY = pos[1];
+            controlState.startPanX = panPos[0];
+            controlState.startPanY = panPos[1];
             // controlState.state = STATE.PAN;
         }
-        else if (mouseDevice.isButtonUp(MouseControl.Right)){
+        else if (mouseDevice.isButtonUp(MouseControl.Right)) {
             controlState.state &= ~ControlHandlerType.PAN;
+        }
+        if (mouseDevice.isButtonHeld(MouseControl.Right)) {
+            panPos = mouseDevice.getValue(MouseControl.Pos);
         }
         if (mouseDevice.hasValue(MouseControl.Scroll, true)) {
             controlState.state |= ControlHandlerType.ZOOM;
             let scroll = mouseDevice.getValue(MouseControl.Scroll);
             dirty = this._zoom(entity, control, controlState, scroll);
         }
-        else{
+        else {
+            controlState.state &= ~ControlHandlerType.ZOOM;
+        }
+
+        const touchDevice = this.touchDevice;
+        if (touchDevice.isButtonDown(TouchControl.Group0)) {
+            pos = touchDevice.getValue(TouchControl.Group0_Pos);
+            controlState.state |= ControlHandlerType.ROTATE;
+            controlState.startX = pos[0];
+            controlState.startY = pos[1];
+        }
+        else if (touchDevice.isButtonUp(TouchControl.Group0)) {
+            controlState.state &= ~ControlHandlerType.ROTATE;
+        }
+        if (touchDevice.isButtonHeld(TouchControl.Group0)) {
+            pos = touchDevice.getValue(TouchControl.Group0_Pos);
+        }
+        if (touchDevice.isButtonDown(TouchControl.Group2)) {
+            panPos = touchDevice.getValue(TouchControl.Group2_Pos);
+            controlState.state |= ControlHandlerType.PAN;
+            controlState.startPanX = panPos[0];
+            controlState.startPanY = panPos[1];
+            // controlState.state = STATE.PAN;
+        }
+        else if (touchDevice.isButtonUp(TouchControl.Group2)) {
+            controlState.state &= ~ControlHandlerType.PAN;
+        }
+        if (touchDevice.isButtonHeld(TouchControl.Group2)) {
+            panPos = touchDevice.getValue(TouchControl.Group2_Pos);
+        }
+        if (touchDevice.hasValue(TouchControl.Group1_Scoll, true)) {
+            controlState.state |= ControlHandlerType.ZOOM;
+            let scroll = touchDevice.getValue(TouchControl.Group1_Scoll);
+            // console.log(scroll[0]);
+            dirty = this._zoom(entity, control, controlState, scroll);
+        }
+        else {
             controlState.state &= ~ControlHandlerType.ZOOM;
         }
 
@@ -136,10 +183,10 @@ export class OrbitControlSystem extends System {
             dirty = this._rotate(entity, control, controlState, deltaX, deltaY);
         }
         if (controlState.state & ControlHandlerType.PAN) {
-            let deltaX = pos[0] - controlState.startPanX;
-            let deltaY = pos[1] - controlState.startPanY;
-            controlState.startPanX = pos[0];
-            controlState.startPanY = pos[1];
+            let deltaX = panPos[0] - controlState.startPanX;
+            let deltaY = panPos[1] - controlState.startPanY;
+            controlState.startPanX = panPos[0];
+            controlState.startPanY = panPos[1];
             dirty = this._pan(entity, control, controlState, deltaX, deltaY);
         }
 
@@ -218,6 +265,7 @@ export class OrbitControlSystem extends System {
     }
     _zoom(entity, control, controlState, delta) {
         const deltaY = delta[1];
+        // console.log(deltaY);
         if (deltaY > 0) {
             this._scale /= Math.pow(0.95, control.zoomSpeed);
         } else if (deltaY < 0) {

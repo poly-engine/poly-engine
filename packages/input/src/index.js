@@ -4,6 +4,8 @@ export { Keys } from "./keyboard/Keys.js"
 
 export { MouseDevice, MouseControl } from "./mouse/MouseDevice.js"
 
+export { TouchDevice, TouchControl } from "./touch/TouchDevice.js"
+
 export { InputControlType } from "./input/InputControlType.js"
 export { InputControl } from "./input/InputControl.js"
 export { InputDevice } from "./input/InputDevice.js"

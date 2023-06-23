@@ -1,6 +1,7 @@
 import { KeyboardDevice } from "../keyboard/KeyboardDevice.js";
 import { MouseDevice } from "../mouse/MouseDevice.js";
 import { InputActionPhase } from "../inputAction/InputActionPhase.js";
+import { TouchDevice } from "../touch/TouchDevice.js";
 
 export const InputDeviceType = {
     Keyboard: 0,
@@ -30,6 +31,7 @@ export class InputManager {
         this.devices = [];
         this.devices[InputDeviceType.Keyboard] = new KeyboardDevice(world);
         this.devices[InputDeviceType.Mouse] = new MouseDevice(world);
+        this.devices[InputDeviceType.Touch] = new TouchDevice(world);
 
         this._actions = [];
         this._actionMap = new Map;
