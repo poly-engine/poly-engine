@@ -14,3 +14,10 @@ export { PBRMaterialDef, PBRMaterialStateDef } from "./PBRMaterial.js";
 export { PBRMaterialSystem } from "./PBRMaterialSystem.js";
 export { PBRSpecularMaterialDef, PBRSpecularMaterialStateDef } from "./PBRSpecularMaterial.js";
 export { PBRSpecularMaterialSystem } from "./PBRSpecularMaterialSystem.js";
+
+export { SkyBoxMaterialDef, SkyBoxMaterialStateDef } from "./SkyBoxMaterial.js";
+export { SkyBoxMaterialSystem } from "./SkyBoxMaterialSystem.js";
+
+export { BlendMode } from "./enums/BlendMode";
+export { RenderFace } from "./enums/RenderFace";
+export { TextureCoordinate } from "./enums/TextureCoordinate";

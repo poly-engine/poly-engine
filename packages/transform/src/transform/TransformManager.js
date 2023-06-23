@@ -1,5 +1,5 @@
 import { SparseSet } from "@poly-engine/core";
-import { mat4 } from "@poly-engine/math";
+import { mat4, vec3 } from "@poly-engine/math";
 
 export class TransformManager {
     constructor(world) {
@@ -88,6 +88,20 @@ export class TransformManager {
             return entity;
         return this.getRootEntity(parentEntity);
     }
+    hasParent(entity){
+        const em = this.em;
+        const parent = em.getComponent(entity, this.com_parent);
+        if (parent == null || parent.entity < 0)
+            return false;
+        return true;
+    }
+    getParentEntity(entity){
+        const em = this.em;
+        const parent = em.getComponent(entity, this.com_parent);
+        if (parent == null || parent.entity < 0)
+            return -1;
+        return parent.entity;
+    }
     getPosition(entity, position) {
         const em = this.em;
         let ltw = em.getComponent(entity, this.com_localToWorld);
@@ -99,6 +113,35 @@ export class TransformManager {
         let ltw = em.getComponent(entity, this.com_localToWorld);
         rotation ??= [0, 0, 0, 1];//quat.create();
         return mat4.getRotation(rotation, ltw.worldMat);
+    }
+    setWorldPosition(entity, position){
+        const em = this.em;
+        let transform = em.getComponent(entity, this.com_transform);
+        let ltw = em.getComponent(entity, this.com_localToWorld);
+        vec3.transformCoordinate(transform.position, position, ltw.worldInvMat);
+        em.setComponent(entity, this.com_transformDirty);
+    }
+    setWorldMatrix(entity, matrix){
+        const em = this.em;
+        let transform = em.getComponent(entity, this.com_transform);
+        let ltw = em.getComponent(entity, this.com_localToWorld);
+        if(ltw == null)
+            return;
+        if(mat4.equals(matrix, ltw.worldMat))
+            return;
+        const parentEnt = this.getParentEntity(entity);
+        if(parentEnt === -1){
+            mat4.copy(ltw.worldMat, matrix);
+            mat4.copy(ltw.localMat, matrix);
+            mat4.decompose(transform.rotation, transform.position, transform.scale, matrix);
+        }
+        else{
+            mat4.copy(ltw.worldMat, matrix);
+            const parentLtw = em.getComponent(parentEnt, this.com_localToWorld);
+            mat4.multiply(ltw.localMat, parentLtw.worldInvMat, matrix);
+            mat4.decompose(transform.rotation, transform.position, transform.scale, ltw.localMat);
+        }
+        em.setComponent(entity, this.com_transformDirty);
     }
     forEachChild(entity, callback) {
         const em = this.em;

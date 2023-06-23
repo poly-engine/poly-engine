@@ -30,6 +30,7 @@ export class AssetManager {
         this._contentRestorerPool = Object.create(null);
     }
 
+    //#region asset data
     createAssetData(id, type, ...compNames) {
         id ??= Util.createUUID();
         let assetData = Object.create(null);
@@ -92,7 +93,9 @@ export class AssetManager {
     getAssetData(id) {
         return this._assetDataMap.get(id);
     }
+    //#endregion
 
+    //#region asset entity
     /**
      * 
      * @param {string} id 
@@ -150,4 +153,22 @@ export class AssetManager {
     getAssetEntity(id) {
         return this.em.getSharedEntity(this.assetCom, id);
     }
+    //#endregion
+
+    //#region asset bundle
+    addAssetBundle(bundle) {
+        //textures
+        //meshes
+        //materials
+        //entities
+        //sceneRoots
+
+        const { textures: textureDatas, meshes: geometryDatas, materials: materialDatas, entities: entDatas, sceneRoots: sceneDatas } = bundle;
+
+        textureDatas?.forEach((data) => this.addAssetData(data));
+        geometryDatas?.forEach((datas) => this.addAssetData(datas[0]));
+        materialDatas?.forEach((data) => this.addAssetData(data));
+        sceneDatas?.forEach((data) => this.addAssetData(data));
+    }
+    //#endregion
 }

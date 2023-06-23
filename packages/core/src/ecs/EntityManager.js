@@ -212,6 +212,61 @@ export class EntityManager {
 
     /**
      * 
+     * @param {Entity} entity 
+     * @returns {boolean}
+     */
+    hasEntity(entity) {
+        return this._entityArchetypes[entity] !== undefined;
+    }
+    /**
+     * 
+     * @param {Entity} entity 
+     */
+    destroyEntity(entity) {
+        // const compManager = this.world.componentManager;
+        // this._assertEntity(entity);
+        //remove components
+        let archetype = this._entityArchetypes[entity];
+        let cids = archetype.compIds;
+        let l = cids.length;
+        let isDestroy = true;
+        for (let i = l - 1; i >= 0; i--) {
+            let cid = cids[i];
+            let store = this._compStores[cid];
+            // let store = compManager.getCompStore(cid);
+            if (store.mode !== CompMode.State)
+                this.removeComponent(entity, cid);
+            else
+                isDestroy = false;
+        }
+        if (isDestroy)
+            this._destroyEmptyEntity(entity);
+    }
+    _destroyEmptyEntity(entity) {
+        this.rootArchetype.entitySet.remove(entity);
+        this._entityArchetypes[entity] = undefined;
+        this.deletedEntities.push(entity);
+        this._entitySet.remove(entity);
+
+        // this.entityNames[entity] = undefined;
+    }
+    /**
+     * 
+     * @param {number} compId 
+     * @returns {Entity}
+     */
+    getSingletonEntity(compId) {
+        const store = this._compStores[compId];
+        // const store = storeOrId;
+        if (!store || store.entities.length === 0)
+            return -1;
+        return store.entities[0];
+    }
+    //#endregion
+
+    //#region entity data
+    /**
+     * 
      * @param {Entity | null} entity 
      * @param {object} data 
      * @param {object} context 
@@ -306,58 +361,42 @@ export class EntityManager {
         }
         return jsons;
     }
-
-    /**
-     * 
-     * @param {Entity} entity 
-     * @returns {boolean}
-     */
-    hasEntity(entity) {
-        return this._entityArchetypes[entity] !== undefined;
-    }
-    /**
-     * 
-     * @param {Entity} entity 
-     */
-    destroyEntity(entity) {
-        // const compManager = this.world.componentManager;
-        // this._assertEntity(entity);
-        //remove components
-        let archetype = this._entityArchetypes[entity];
-        let cids = archetype.compIds;
-        let l = cids.length;
-        let isDestroy = true;
-        for (let i = l - 1; i >= 0; i--) {
-            let cid = cids[i];
-            let store = this._compStores[cid];
-            // let store = compManager.getCompStore(cid);
-            if (store.mode !== CompMode.State)
-                this.removeComponent(entity, cid);
-            else
-                isDestroy = false;
+    copyEntityData(from, to, context) {
+        to ??= {};
+        for (let compName in from) {
+            const compId = this.getComponentId(compName);
+            // let comp = this.setComponentByJson(entity, compId, data[compName], context);
+            const store = this._compStores[compId];
+            to[compName] = store.toJson(from[compName], context);
         }
-        if (isDestroy)
-            this._destroyEmptyEntity(entity);
+        return to;
     }
-    _destroyEmptyEntity(entity) {
-        this.rootArchetype.entitySet.remove(entity);
-        this._entityArchetypes[entity] = undefined;
-        this.deletedEntities.push(entity);
-        this._entitySet.remove(entity);
+    copyEntityDatas(entities, fromList, toList, context) {
+        context ??= {};
+        // context.world = this;
+        context.entMap = [];
+        // toList ??= [];
+        const toEnts = [];
 
-        // this.entityNames[entity] = undefined;
-    }
-    /**
-     * 
-     * @param {number} compId 
-     * @returns {Entity}
-     */
-    getSingletonEntity(compId) {
-        const store = this._compStores[compId];
-        // const store = storeOrId;
-        if (!store || store.entities.length === 0)
-            return -1;
-        return store.entities[0];
+        entities ??= fromList.map((value, index) => index);
+        const entNum = entities.length;
+        let startIndex = toList.length;
+        // entities.forEach((value) => context.entMap[value] = startIndex++);
+
+        for (let i = 0; i < entNum; i++) {
+            const fromEnt = entities[i];
+            const toEnt = startIndex + i;
+            context.entMap[fromEnt] = toEnt;
+            toList[toEnt] = {};
+            toEnts.push(toEnt);
+            // copyEntityData(fromList[ent], toList[startIndex + i], context);
+        }
+
+        for (let i = 0; i < entNum; i++) {
+            const fromEnt = entities[i];
+            this.copyEntityData(fromList[fromEnt], toList[startIndex + i], context);
+        }
+        return toEnts;
     }
     //#endregion
 

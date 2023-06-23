@@ -68,6 +68,7 @@ export class Texture2DSystem extends System {
         const gl = this.glManager.gl;
         const isWebGL2 = this.glManager.isWebGL2;
         const { format, mipmap, width, height } = texture;
+        console.log(texture);
         if (mipmap && !isWebGL2 && (!TextureUtil._isPowerOf2(width) || !TextureUtil._isPowerOf2(height))) {
             Logger.warn(
                 "non-power-2 texture is not supported for mipmap in WebGL1,and has automatically downgraded to non-mipmap"
@@ -88,8 +89,8 @@ export class Texture2DSystem extends System {
 
         // textureState.formatDetail = TextureUtil._getFormatDetail(gl, texture.format, isWebGL2);
         // textureState.texture = TextureUtil.createTexture(gl, texture.element);
-        textureState.mipmapCount = TextureUtil._getMipmapCount(texture);
-        const mipmapCount = textureState.mipmapCount;
+        // textureState.mipmapCount = TextureUtil._getMipmapCount(texture);
+        const mipmapCount = texture.mipmapCount;
 
         this.glManager.bindTexture(textureState);
 
@@ -122,6 +123,7 @@ export class Texture2DSystem extends System {
         }
 
         this._updateImage(texture, textureState, texture2D, texture2DState);
+        // this.textureSystem._generateMipmaps(texture, textureState);
     }
 
     setImage(entity, imageSource, mipLevel = 0) {
@@ -131,11 +133,12 @@ export class Texture2DSystem extends System {
         const texture = this.em.getComponent(entity, this.com_texture);
         const textureState = this.em.getComponent(entity, this.com_textureState);
         const texture2D = this.em.getComponent(entity, this.com_texture2D);
+        const texture2DState = this.em.getComponent(entity, this.com_texture2DState);
 
         if (texture2D.image === imageSource)
             return;
         texture2D.image = imageSource;
-
+        this._updateImage(texture, textureState, texture2D, texture2DState);
     }
     _updateImage(texture, textureState, texture2D, texture2DState) {
         const imageSource = texture2D.image;
@@ -149,6 +152,79 @@ export class Texture2DSystem extends System {
         // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, +flipY);
         // gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, +premultiplyAlpha);
         gl.texSubImage2D(target, 0, 0, 0, baseFormat, dataType, imageSource);
+    }
+    setPixelBuffer(entity,
+        colorBuffer,
+        mipLevel = 0,
+        x,
+        y,
+        width,
+        height
+    ) {
+        const texture = this.em.getComponent(entity, this.com_texture);
+        const textureState = this.em.getComponent(entity, this.com_textureState);
+        const texture2D = this.em.getComponent(entity, this.com_texture2D);
+        const texture2DState = this.em.getComponent(entity, this.com_texture2DState);
+
+        const gl = this.glManager.gl;
+        const isWebGL2 = this.glManager.isWebGL2;
+        const { internalFormat, baseFormat, dataType, isCompressed } = textureState.formatDetail;
+        const mipWidth = Math.max(1, texture.width >> mipLevel);
+        const mipHeight = Math.max(1, texture.height >> mipLevel);
+        const target = textureState.target;
+
+        width = width || mipWidth - x;
+        height = height || mipHeight - y;
+
+        this.glManager.bindTexture(textureState);
+
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+
+        if (isCompressed) {
+            const mipBit = 1 << mipLevel;
+            if (isWebGL2 || texture2DState.compressedMipFilled & mipBit) {
+                gl.compressedTexSubImage2D(target, mipLevel, x, y, width, height, internalFormat, colorBuffer);
+            } else {
+                gl.compressedTexImage2D(target, mipLevel, internalFormat, width, height, 0, colorBuffer);
+                texture2DState.compressedMipFilled |= mipBit;
+            }
+        } else {
+            gl.texSubImage2D(target, mipLevel, x, y, width, height, baseFormat, dataType, colorBuffer);
+        }
+    }
+    getPixelBuffer(entity,
+        face,
+        x,
+        y,
+        width,
+        height,
+        mipLevel,
+        out
+    ) {
+        // const texture = this.em.getComponent(entity, this.com_texture);
+        const textureState = this.em.getComponent(entity, this.com_textureState);
+        // const textureCube = this.em.getComponent(entity, this.com_textureCube);
+
+        const gl = this.glManager.gl;
+        const isWebGL2 = this.glManager.isWebGL2;
+        // const target = textureState.target;
+        const { baseFormat, dataType } = textureState.formatDetail;
+
+        if (textureState.formatDetail.isCompressed) {
+            throw new Error("Unable to read compressed texture");
+        }
+        // super._getPixelBuffer(face, x, y, width, height, mipLevel, out);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.glManager._getReadFrameBuffer());
+
+        if (mipLevel > 0 && !isWebGL2) {
+            mipLevel = 0;
+            Logger.error("mipLevel only take effect in WebGL2.0");
+        }
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, textureState.texture, mipLevel);
+
+        gl.readPixels(x, y, width, height, baseFormat, dataType, out);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
 }
 

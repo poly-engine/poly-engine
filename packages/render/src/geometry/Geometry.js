@@ -1,7 +1,6 @@
 import { CompMode, CompType } from "@poly-engine/core";
 import { MeshTopology, VertexElementType } from "../constants.js";
 import { BufferUsage } from "./BufferUsage.js";
-import { IndexFormat } from "./IndexFormat.js";
 
 export const GeometryDef = {
     type: CompType.Shared,

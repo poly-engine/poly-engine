@@ -3,6 +3,7 @@ import { VertexBufferConstructors, VertexElementType, VertexElementTypeSize } fr
 import { ShaderSystem } from "../shader/ShaderSystem.js";
 import { GLUtil } from "../webgl/GLUtil.js";
 import { BufferUsage } from "./BufferUsage.js";
+import { GeometryUtil } from "./GeometryUtil.js";
 
 export class GeometrySystem extends System {
     constructor(world) {
@@ -10,11 +11,6 @@ export class GeometrySystem extends System {
         this.groupId = SystemGroupType.RenderUpdate;
         this.index = 450;
 
-        // this.em = this.world.entityManager;
-        // // this.compManager = this.world.componentManager;
-        // this.qm = this.world.queryManager;
-
-        // this.com_glState = this.em.getComponentId('GlState');
         this.com_geometry = this.em.getComponentId('Geometry');
         this.com_geometryState = this.em.getComponentId('GeometryState');
 
@@ -32,9 +28,38 @@ export class GeometrySystem extends System {
         // this._baseTextureMacro = this.shaderSystem.getMacro('RENDERER_HAS_UV1');
         // this._baseTextureMacro = this.shaderSystem.getMacro('RENDERER_HAS_UV');
         // this._baseTextureMacro = this.shaderSystem.getMacro('RENDERER_HAS_UV');
+
+        this.assetManager = this.world.assetManager;
     }
     init() {
         this.glManager = this.world.glManager;
+    }
+    createBoxGeometryData(id = null, isAdd = false, width = 1, height = 1, depth = 1, wSegments = 1, hSegments = 1, dSegments = 1) {
+        const data = this.assetManager.createAssetData(id, "Geometry", "Geometry");
+        // data.Material.shaderRef = 'skybox';
+        const geometry = data.Geometry;
+        let boxData = GeometryUtil.createBoxData(
+            width, height, depth,
+            wSegments, hSegments, dSegments);
+        // let geometry = em.createComponent(this.com_geometry);
+
+        geometry.vertexBuffers.push({
+            data: boxData.vertices,
+        });
+        geometry.vertexBuffers.push({
+            data: boxData.normals,
+        });
+        geometry.vertexBuffers.push({
+            data: boxData.uvs,
+        });
+        geometry.vertexElements.push({ name: 'POSITION', index: 0, type: VertexElementType.Float, size: 3, offset: 0, normalize: false });
+        geometry.vertexElements.push({ name: 'NORMAL', index: 1, type: VertexElementType.Float, size: 3, offset: 0, normalize: false });
+        geometry.vertexElements.push({ name: 'TEXCOORD_0', index: 2, type: VertexElementType.Float, size: 2, offset: 0, normalize: false });
+        geometry.indexBuffer = { data: boxData.indices };
+
+        if(isAdd)
+            this.assetManager.addAssetData(data);
+        return data;
     }
     _update() {
         const em = this.em;

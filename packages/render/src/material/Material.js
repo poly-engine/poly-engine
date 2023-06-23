@@ -1,5 +1,7 @@
 import { CompMode, CompType } from "@poly-engine/core";
-import { BlendMode, RenderFace, RenderQueueType } from "../constants.js";
+import { RenderQueueType } from "../render/enums/RenderQueueType";
+import { BlendMode } from "./enums/BlendMode";
+import { RenderFace } from "./enums/RenderFace";
 
 export const MaterialDef = {
     type: CompType.Shared,

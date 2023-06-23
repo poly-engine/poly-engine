@@ -43,23 +43,23 @@ export class GLTFTextureParser extends GLTFParser {
                   return texture;
                 });
           } else {
-            const bufferView = glTF.bufferViews[bufferViewIndex];
-            const buffer = buffers[bufferView.buffer];
-            const imageBuffer = new Uint8Array(buffer, bufferView.byteOffset, bufferView.byteLength);
+            // const bufferView = glTF.bufferViews[bufferViewIndex];
+            // const buffer = buffers[bufferView.buffer];
+            // const imageBuffer = new Uint8Array(buffer, bufferView.byteOffset, bufferView.byteLength);
 
-            return GLTFUtils.loadImageBuffer(imageBuffer, mimeType).then((image) => {
-              const texture = new Texture2D(engine, image.width, image.height);
-              texture.setImageSource(image);
-              texture.generateMipmaps();
-              texture.name = textureName || imageName || `texture_${index}`;
-              if (sampler !== undefined) {
-                this._parseSampler(texture, glTF.samplers[sampler]);
-              }
-              const bufferTextureRestoreInfo = new BufferTextureRestoreInfo(texture, bufferView, mimeType);
-              context.contentRestorer.bufferTextures.push(bufferTextureRestoreInfo);
+            // return GLTFUtils.loadImageBuffer(imageBuffer, mimeType).then((image) => {
+            //   const texture = new Texture2D(engine, image.width, image.height);
+            //   texture.setImageSource(image);
+            //   texture.generateMipmaps();
+            //   texture.name = textureName || imageName || `texture_${index}`;
+            //   if (sampler !== undefined) {
+            //     this._parseSampler(texture, glTF.samplers[sampler]);
+            //   }
+            //   const bufferTextureRestoreInfo = new BufferTextureRestoreInfo(texture, bufferView, mimeType);
+            //   context.contentRestorer.bufferTextures.push(bufferTextureRestoreInfo);
 
-              return texture;
-            });
+            //   return texture;
+            // });
           }
         })
       )

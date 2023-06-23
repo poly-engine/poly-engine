@@ -97,7 +97,7 @@ export class PhongMaterialSystem extends System {
         bpMaterial.specularTextureRef = value;
 
         const shaderData = this.em.getComponent(entity, this.shaderDataCom);
-        const bpMaterialState = em.getComponent(entity, this.bpMaterialStateCom);
+        const bpMaterialState = this.em.getComponent(entity, this.bpMaterialStateCom);
         this._updateSpecularTexture(bpMaterial, shaderData, bpMaterialState);
     }
     _updateSpecularTexture(bpMaterial, shaderData, bpMaterialState) {

@@ -20,7 +20,7 @@ import { ShaderProgramDef } from "./shader/ShaderProgram.js";
 import { ShaderDataDef } from "./shader/ShaderData.js";
 import { MeshRendererDef, MeshRendererStateDef } from "./renderer/MeshRenderer.js";
 import { LightDef } from "./light/Light.js";
-import { DirectLightDef } from "./light/DirectLight.js";
+import { DirectLightDef, SceneDirectLightDef } from "./light/DirectLight.js";
 import { DirectLightSystem } from "./light/DirectLightSystem.js";
 import { Texture2DLoader } from "./loader1/Texture2DLoader.js";
 import { TextureDef, TextureStateDef } from "./texture/Texture.js";
@@ -44,6 +44,25 @@ import { PBRMaterialSystem } from "./material/PBRMaterialSystem.js";
 import { PBRSpecularMaterialDef, PBRSpecularMaterialStateDef } from "./material/PBRSpecularMaterial.js";
 import { PBRSpecularMaterialSystem } from "./material/PBRSpecularMaterialSystem.js";
 import { GLManager } from "./webgl/GLManager.js";
+import { SceneFogSystem } from "./scene/SceneFogSystem.js";
+import { PointLightDef, ScenePointLightDef } from "./light/PointLight.js";
+import { PointLightSystem } from "./light/PointLightSystem.js";
+import { SpotLightSystem } from "./light/SpotLightSystem.js";
+import { SceneSpotLightDef, SpotLightDef } from "./light/SpotLight.js";
+import { ShaderManager } from "./shader/ShaderManager.js";
+import { FogDef, FogStateDef } from "./scene/Fog.js";
+import { AmbientLightDef, AmbientLightStateDef } from "./scene/AmbientLight.js";
+import { BackgroundDef, BackgroundStateDef } from "./scene/Background.js";
+import { AmbientLightSystem } from "./scene/AmbientLightSystem.js";
+import { BackgroundSystem } from "./scene/BackgroundSystem.js";
+import { TextureCubeDef, TextureCubeStateDef } from "./texture/TextureCube.js";
+import { TextureCubeSystem } from "./texture/TextureCubeSystem.js";
+import { TextureCubeLoader } from "./loader1/TextureCubeLoader.js";
+import { EnvLoader } from "./loader1/EnvLoader.js";
+import { SkyBoxMaterialDef, SkyBoxMaterialStateDef } from "./material/SkyBoxMaterial.js";
+import { SkyBoxMaterialSystem } from "./material/SkyBoxMaterialSystem.js";
+import { SkyDef, SkyStateDef } from "./scene/Sky.js";
+import { SkySystem } from "./scene/SkySystem.js";
 
 export class RenderModule extends Module {
     init() {
@@ -99,7 +118,11 @@ export class RenderModule extends Module {
         const pbrMaterialStateCom = em.registerComponent('PBRMaterialState', PBRMaterialStateDef);
         const pbrSpecularMaterialCom = em.registerComponent('PBRSpecularMaterial', PBRSpecularMaterialDef);
         const pbrSpecularMaterialStateCom = em.registerComponent('PBRSpecularMaterialState', PBRSpecularMaterialStateDef);
-        const com_renderState = em.registerComponent('RenderState', RenderStateDef);
+
+        const skyMaterialCom = em.registerComponent('SkyBoxMaterial', SkyBoxMaterialDef);
+        const skyMaterialStateCom = em.registerComponent('SkyBoxMaterialState', SkyBoxMaterialStateDef);
+
+        const renderStateCom = em.registerComponent('RenderState', RenderStateDef);
         //#endregion
 
         //#region texture
@@ -126,23 +149,11 @@ export class RenderModule extends Module {
         //     }
         // }
         const com_texture = em.registerComponent('Texture', TextureDef);
-        // {
-        //     mode: CompMode.State,
-        //     schema: {
-        //         // id: { type: 'string', default: 'default' },
-        //         texture: { type: 'object', default: null },
-        //     }
-        // }
         const com_textureState = em.registerComponent('TextureState', TextureStateDef);
-        // {
-        //     type: CompType.Shared,
-        //     schema: {
-        //         id: { type: 'string', default: null },
-        //         image: { type: 'object', default: null },
-        //     }
-        // }
         const com_texture2D = em.registerComponent('Texture2D', Texture2DDef);
         const com_texture2DState = em.registerComponent('Texture2DState', Texture2DStateDef);
+        const com_textureCube = em.registerComponent('TextureCube', TextureCubeDef);
+        const com_textureCubeState = em.registerComponent('TextureCubeState', TextureCubeStateDef);
         //#endregion
 
         //#region shader
@@ -165,8 +176,30 @@ export class RenderModule extends Module {
 
         //#region light
         const lightCom = em.registerComponent('Light', LightDef);
-        const directLightCom = em.registerComponent('DirectLight', DirectLightDef);
 
+        const directLightCom = em.registerComponent('DirectLight', DirectLightDef);
+        const sceneDirectLightCom = em.registerComponent('SceneDirectLight', SceneDirectLightDef);
+
+        const pointLightCom = em.registerComponent('PointLight', PointLightDef);
+        const scenePointLightCom = em.registerComponent('ScenePointLight', ScenePointLightDef);
+
+        const spotLightCom = em.registerComponent('SpotLight', SpotLightDef);
+        const sceneSpotLightCom = em.registerComponent('SceneSpotLight', SceneSpotLightDef);
+
+        //#endregion
+
+        //#region scene
+        const fogCom = em.registerComponent('Fog', FogDef);
+        const fogStateCom = em.registerComponent('FogState', FogStateDef);
+
+        const ambientLightCom = em.registerComponent('AmbientLight', AmbientLightDef);
+        const ambientLightStateCom = em.registerComponent('AmbientLightState', AmbientLightStateDef);
+
+        const backgroundCom = em.registerComponent('Background', BackgroundDef);
+        const backgroundStateCom = em.registerComponent('BackgroundState', BackgroundStateDef);
+
+        const skyCom = em.registerComponent('Sky', SkyDef);
+        const skyStateCom = em.registerComponent('SkyState', SkyStateDef);
         //#endregion
 
         //#region mesh renderer
@@ -178,11 +211,12 @@ export class RenderModule extends Module {
 
         //manager
         world.glManager = new GLManager(world);
+        world.shaderManager = new ShaderManager(world);
         
         //system
         // const canvasSys = sm.addSystem(CanvasSystem);
         // const sys_glStateInit = sm.addSystem(GlStateInitSystem);
-        //LateUpdate: 200
+        //LateUpdate: 1200
         const sys_camera = sm.addSystem(CameraSystem);
         // const sys_glStateRelease = sm.addSystem(GlStateReleaseSystem);
 
@@ -191,14 +225,19 @@ export class RenderModule extends Module {
         const shaderSys = sm.addSystem(ShaderSystem);
 
         //RenderUpdate: 200-300
-        const textureSys = sm.addSystem(TextureSystem);
-        const texture2DSys = sm.addSystem(Texture2DSystem);
+        //200
+        const textureSys = sm.addSystem(TextureSystem, true);
+        //201
+        const texture2DSys = sm.addSystem(Texture2DSystem, true);
+        //202
+        const textureCubeSys = sm.addSystem(TextureCubeSystem, true);
 
         //RenderUpdate: 300-400
         //300
         const materialSys = sm.addSystem(MaterialSystem);
         //301
         const baseMaterialSys = sm.addSystem(BaseMaterialSystem);
+        const skyMaterialSys = sm.addSystem(SkyBoxMaterialSystem, true);
         //302
         const phongBaseMaterialSys = sm.addSystem(PhongBaseMaterialSystem);
         //303
@@ -223,10 +262,22 @@ export class RenderModule extends Module {
         const meshRendererSys = sm.addSystem(MeshRendererSystem);
 
         //RenderUpdate: 600-700
-        //600
-        const directLightSys = sm.addSystem(DirectLightSystem);
+        //610
+        const sceneFogSys = sm.addSystem(SceneFogSystem, true);
+        //650
+        const directLightSys = sm.addSystem(DirectLightSystem, true);
+        //660
+        const pointLightSys = sm.addSystem(PointLightSystem, true);
+        //660
+        const spotLightSys = sm.addSystem(SpotLightSystem, true);
+        //630
+        const ambientLightSys = sm.addSystem(AmbientLightSystem, true);
+        //620
+        const backgroundSys = sm.addSystem(BackgroundSystem, true);
+        //620
+        const skySys = sm.addSystem(SkySystem, true);
 
-        //RenderUpdate: 1000
+        //RenderUpdate: 5000
         const renderSys = sm.addSystem(RenderSystem);
 
         // canvasSys.init();
@@ -235,8 +286,8 @@ export class RenderModule extends Module {
         // sys_glStateRelease.init();
         shaderSys.init();
 
-        textureSys.init();
-        texture2DSys.init();
+        // textureSys.init();
+        // texture2DSys.init();
 
         materialSys.init();
         baseMaterialSys.init();
@@ -252,7 +303,7 @@ export class RenderModule extends Module {
         geometrySys.init();
         meshRendererSys.init();
 
-        directLightSys.init();
+        // directLightSys.init();
 
         renderSys.init();
 
@@ -260,6 +311,8 @@ export class RenderModule extends Module {
         const lm = world.loadManager;
 
         lm.addLoader("Texture2D", new Texture2DLoader(true), ["png", "jpg", "webp", "jpeg"]);
+        lm.addLoader("TextureCube", new TextureCubeLoader(true), [""]);
+        lm.addLoader("AmbientLight", new EnvLoader(true), ["env"]);
         lm.addLoader("Prefab", new GLTFLoader(false), ["gltf", "glb"]);
     }
 }

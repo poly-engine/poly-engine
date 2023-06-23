@@ -15,7 +15,13 @@ export class Spherical {
         this.phi = phi ?? 0;
         this.theta = theta ?? 0;
     }
-
+    clear(){
+        this.radius = 0;
+        this.phi = 0;
+        this.theta = 0;
+        mat4.identity(this._matrix);
+        mat4.identity(this._matrixInv);
+    }
     makeSafe() {
         const count = Math.floor(this.phi / Math.PI);
         this.phi = glMatrix.clamp(this.phi, count * Math.PI + ESP, (count + 1) * Math.PI - ESP);
@@ -47,15 +53,15 @@ export class Spherical {
         vec3.cross(xAxis, yAxis, zAxis);
         // const { elements: es } = this._matrix;
         const es = this._matrix;
-        (es[0] = xAxis.x), (es[1] = xAxis.y), (es[2] = xAxis.z);
-        (es[4] = yAxis.x), (es[5] = yAxis.y), (es[6] = yAxis.z);
-        (es[8] = zAxis.x), (es[9] = zAxis.y), (es[10] = zAxis.z);
+        (es[0] = xAxis[0]), (es[1] = xAxis[1]), (es[2] = xAxis[2]);
+        (es[4] = yAxis[0]), (es[5] = yAxis[1]), (es[6] = yAxis[2]);
+        (es[8] = zAxis[0]), (es[9] = zAxis[1]), (es[10] = zAxis[2]);
 
         // const { elements: eInv } = this._matrixInv;
         const eInv = this._matrixInv;
-        (eInv[0] = xAxis.x), (eInv[4] = xAxis.y), (eInv[8] = xAxis.z);
-        (eInv[1] = yAxis.x), (eInv[5] = yAxis.y), (eInv[9] = yAxis.z);
-        (eInv[2] = zAxis.x), (eInv[6] = zAxis.y), (eInv[10] = zAxis.z);
+        (eInv[0] = xAxis[0]), (eInv[4] = xAxis[1]), (eInv[8] = xAxis[2]);
+        (eInv[1] = yAxis[0]), (eInv[5] = yAxis[1]), (eInv[9] = yAxis[2]);
+        (eInv[2] = zAxis[0]), (eInv[6] = zAxis[1]), (eInv[10] = zAxis[2]);
     }
 
     setFromVec3(value, atTheBack = false) {
@@ -68,11 +74,11 @@ export class Spherical {
             this.phi = 0;
         } else {
             if (atTheBack) {
-                this.phi = 2 * Math.PI - Math.acos(glMatrix.clamp(value.y / this.radius, -1, 1));
-                this.theta = Math.atan2(-value.x, -value.z);
+                this.phi = 2 * Math.PI - Math.acos(glMatrix.clamp(value[1] / this.radius, -1, 1));
+                this.theta = Math.atan2(-value[0], -value[2]);
             } else {
-                this.phi = Math.acos(glMatrix.clamp(value.y / this.radius, -1, 1));
-                this.theta = Math.atan2(value.x, value.z);
+                this.phi = Math.acos(glMatrix.clamp(value[1] / this.radius, -1, 1));
+                this.theta = Math.atan2(value[0], value[2]);
             }
         }
         return this;

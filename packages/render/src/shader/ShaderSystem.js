@@ -2,27 +2,7 @@ import { BitSet, System, SystemGroupType } from "@poly-engine/core";
 import { AssetSystem } from "@poly-engine/asset";
 import { ShaderUtil } from "./ShaderUtil.js";
 import { ShaderFactory } from "../shaderlib/ShaderFactory.js";
-import backgroundTextureFs from "../shaderlib/extra/background-texture.fs.glsl";
-import backgroundTextureVs from "../shaderlib/extra/background-texture.vs.glsl";
-import blinnPhongFs from "../shaderlib/extra/blinn-phong.fs.glsl";
-import blinnPhongVs from "../shaderlib/extra/blinn-phong.vs.glsl";
-import particleFs from "../shaderlib/extra/particle.fs.glsl";
-import particleVs from "../shaderlib/extra/particle.vs.glsl";
-import pbrSpecularFs from "../shaderlib/extra/pbr-specular.fs.glsl";
-import pbrFs from "../shaderlib/extra/pbr.fs.glsl";
-import pbrVs from "../shaderlib/extra/pbr.vs.glsl";
-import shadowMapFs from "../shaderlib/extra/shadow-map.fs.glsl";
-import shadowMapVs from "../shaderlib/extra/shadow-map.vs.glsl";
-import skyboxFs from "../shaderlib/extra/skybox.fs.glsl";
-import skyboxVs from "../shaderlib/extra/skybox.vs.glsl";
-import skyProceduralFs from "../shaderlib/extra/SkyProcedural.fs.glsl";
-import skyProceduralVs from "../shaderlib/extra/SkyProcedural.vs.glsl";
-import spriteMaskFs from "../shaderlib/extra/sprite-mask.fs.glsl";
-import spriteMaskVs from "../shaderlib/extra/sprite-mask.vs.glsl";
-import spriteFs from "../shaderlib/extra/sprite.fs.glsl";
-import spriteVs from "../shaderlib/extra/sprite.vs.glsl";
-import unlitFs from "../shaderlib/extra/unlit.fs.glsl";
-import unlitVs from "../shaderlib/extra/unlit.vs.glsl";
+
 import { GLUtil } from "../webgl/GLUtil.js";
 import { GLCapabilityType } from "../webgl/GLCapabilityType.js";
 
@@ -69,7 +49,7 @@ export class ShaderSystem extends System {
         // this.em = this.world.entityManager;
         // this.qm = this.world.queryManager;
         this.cloneManager = this.world.cloneManager;
-        this.assetSystem = this.world.assetManager;
+        // this.assetManager = this.world.assetManager;
 
         this.com_glState = this.em.getComponentId('GlState');
         this.com_shader = this.em.getComponentId('Shader');
@@ -99,22 +79,22 @@ export class ShaderSystem extends System {
         // this.assetSystem = this.sm.getSystem(AssetSystem);
         //add default shaders
         // let shader = this.em.createComponent(this.com_shader, 'unlit', unlitVs, unlitFs);
-        this.assetSystem.addAssetData({
-            Asset: { id: 'sha_unlit', type: 'Shader', },
-            Shader: { id: 'sha_unlit', vSource: unlitVs, fSource: unlitFs, }
-        });
-        this.assetSystem.addAssetData({
-            Asset: { id: 'sha_phong', type: 'Shader', },
-            Shader: { id: 'sha_phong', vSource: blinnPhongVs, fSource: blinnPhongFs, }
-        });
-        this.assetSystem.addAssetData({
-            Asset: { id: 'sha_pbr', type: 'Shader', },
-            Shader: { id: 'sha_pbr', vSource: pbrVs, fSource: pbrFs, }
-        });
-        this.assetSystem.addAssetData({
-            Asset: { id: 'sha_pbrSpecular', type: 'Shader', },
-            Shader: { id: 'sha_pbrSpecular', vSource: pbrVs, fSource: pbrSpecularFs, }
-        });
+        // this.assetManager.addAssetData({
+        //     Asset: { id: 'sha_unlit', type: 'Shader', },
+        //     Shader: { id: 'sha_unlit', vSource: unlitVs, fSource: unlitFs, }
+        // });
+        // this.assetManager.addAssetData({
+        //     Asset: { id: 'sha_phong', type: 'Shader', },
+        //     Shader: { id: 'sha_phong', vSource: blinnPhongVs, fSource: blinnPhongFs, }
+        // });
+        // this.assetManager.addAssetData({
+        //     Asset: { id: 'sha_pbr', type: 'Shader', },
+        //     Shader: { id: 'sha_pbr', vSource: pbrVs, fSource: pbrFs, }
+        // });
+        // this.assetManager.addAssetData({
+        //     Asset: { id: 'sha_pbrSpecular', type: 'Shader', },
+        //     Shader: { id: 'sha_pbrSpecular', vSource: pbrVs, fSource: pbrSpecularFs, }
+        // });
     }
     _update() {
         const em = this.em;
@@ -158,7 +138,7 @@ export class ShaderSystem extends System {
         return program;
     }
     destroyShaderProgram(entity, macroBitset) {
-        let glState = em.getSingletonComponent(this.com_glState);
+        let glState = this.em.getSingletonComponent(this.com_glState);
         // const shader = this.em.getComponent(entity, this.com_shader);
         const programs = this.em.getComponent(entity, this.com_shaderProgram);
         let index = programs.findIndex((p) => BitSet.equals2(macroBitset, p.macroBitset));
@@ -168,7 +148,7 @@ export class ShaderSystem extends System {
         program.refCount--;
         if (program.refCount <= 0) {
             programs.removeAt(index);
-            this._releaseShaderProgram(glState, program);
+            this._releaseShaderProgram(program);
         }
     }
     _initShaderProgram(shader, shaderProgram) {
@@ -185,6 +165,8 @@ export class ShaderSystem extends System {
         // });
         // console.log(macroNameList);
         this.glManager.getMacroNames(macroBitset, macroNameList);
+        console.log("_initShaderProgram", macroNameList);
+
         const macroNameStr = ShaderFactory.parseCustomMacros(macroNameList);
         const versionStr = isWebGL2 ? "#version 300 es" : "#version 100";
         const graphicAPI = isWebGL2 ? "#define GRAPHICS_API_WEBGL2" : "#define GRAPHICS_API_WEBGL1";
@@ -267,6 +249,11 @@ export class ShaderSystem extends System {
         shaderProgram.program = null;
         shaderProgram.attributeMap = null;
         shaderProgram.uniformMap = null;
+
+        const macroNameList = [];
+        this.glManager.getMacroNames(shaderProgram.macroBitset, macroNameList);
+        console.log("_releaseShaderProgram", macroNameList);
+        shaderProgram.macroBitset = null;
     }
 
     // getProperty(name) {

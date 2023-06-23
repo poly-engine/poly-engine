@@ -12,7 +12,9 @@ export const TextureDef = {
         width: { type: 'number', default: 0 },
         height: { type: 'number', default: 0 },
         format: { type: 'number', default: TextureFormat.R8G8B8A8 },
+
         mipmap: { type: 'boolean', default: false },
+        mipmapCount: { type: 'number', default: 0 },
 
         wrapModeU: { type: 'number', default: TextureWrapMode.Repeat },
         wrapModeV: { type: 'number', default: TextureWrapMode.Repeat },
@@ -50,7 +52,6 @@ export const TextureStateDef = {
         target: { type: 'number', default: 0 },
         formatDetail: { type: 'object', default: {} },
 
-        mipmapCount: { type: 'number', default: 0 },
         isDepthTexture: { type: 'boolean', default: false }
     }
 };

@@ -23,10 +23,10 @@ export class GLTFPipeline {
     GLTFTextureParser,
     GLTFMaterialParser,
     GLTFMeshParser,
-    // GLTFEntityParser,
+    GLTFEntityParser,
     // GLTFSkinParser,
     // GLTFAnimationParser,
-    // GLTFSceneParser
+    GLTFSceneParser
   );
 
   _parsers = [];

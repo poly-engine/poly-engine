@@ -41,8 +41,10 @@ export class CloneManager {
             if (!propDefault)
                 prop = null;
             else {
-                let arr = prop || [];
-                for (let j = 0; j < propDefault.length; j++) {
+                // let arr = prop || [];
+                const length = propDefault.length;
+                const arr = prop || new propDefault.constructor(length);
+                for (let j = 0; j < length; j++) {
                     arr[j] = propDefault[j];
                 }
                 prop = arr;
@@ -95,6 +97,8 @@ export class CloneManager {
     }
     _loadPropFromJson(propSchema, prop, jsonValue, context) {
         let propDefault = propSchema.default;
+        if (jsonValue == null)
+            return null;
         let type = propSchema.type;
         let handler = this._propHandlerMap.get(type);
         if (handler) {
@@ -182,45 +186,26 @@ export class CloneManager {
         let propDefault = propSchema.default;
         let type = propSchema.type;
         let jsonValue = undefined;
+        let outDefault = context.outDefault === true;
         let handler = this._propHandlerMap.get(type);
         if (handler) {
             jsonValue = handler.toJson(this, propSchema, value, context);
         }
         else if (type === 'string' || type === 'number' || type === 'boolean') {
-            if (value !== propDefault || isItem)
+            if (outDefault || value !== propDefault || isItem)
                 jsonValue = value;
         }
         else if (type === 'entity') {
             let entity = value;
-            if (entity !== propDefault || isItem) {
+            if (!outDefault || entity !== propDefault || isItem) {
                 if (context?.entMap)
                     if (entity != undefined && entity >= 0)
                         jsonValue = context?.entMap[entity];
             }
         }
-        // else if (type === 'vec2') {
-        //     if (!vec2.exactEquals(value, propDefault))
-        //         jsonValue = vec2.clone(value);
-        // }
-        // else if (type === 'vec3') {
-        //     if (!Vec3.exactEquals(value, propDefault))
-        //         jsonValue = Vec3.clone(value);
-        // }
-        // else if (type === 'vec4') {
-        //     if (!vec4.exactEquals(value, propDefault))
-        //         jsonValue = vec4.clone(value);
-        // }
-        // else if (type === 'quat') {
-        //     if (!quat.exactEquals(value, propDefault))
-        //         jsonValue = quat.clone(value);
-        // }
-        // else if (type === 'mat4') {
-        //     if (!mat4.exactEquals(value, propDefault))
-        //         jsonValue = mat4.clone(value);
-        // }
         else if (type === 'array') {
             // console.log(value + ', ' + propDefault);
-            if (!Util.deepEqual(value, propDefault)) {
+            if (outDefault || !Util.deepEqual(value, propDefault)) {
                 let arr = [];
                 let objArr = value;
                 let valueSchema = propSchema.value;
@@ -234,7 +219,7 @@ export class CloneManager {
             }
         }
         else if (type === 'bin') {
-            if (!Util.deepEqual(value, propDefault)) {
+            if (outDefault || !Util.deepEqual(value, propDefault)) {
                 let arr = [];
                 let objArr = value;
                 for (let j = 0; j < objArr.length; j++) {
@@ -244,7 +229,7 @@ export class CloneManager {
             }
         }
         else if (type === 'object') {
-            if (!Util.deepEqual(value, propDefault) || isItem) {
+            if (outDefault || (typeof propDefault === 'function' || !Util.deepEqual(value, propDefault)) || isItem) {
                 if (!propSchema.schema)
                     // jsonValue = Util.deepClone(value);
                     jsonValue = value;
@@ -265,7 +250,9 @@ export class CloneManager {
             if (value == null)
                 continue;
             let propSchema = objSchema[key];
-            json[key] = this._savePropToJson(propSchema, value, context);
+            let prop = this._savePropToJson(propSchema, value, context);
+            if (prop !== undefined)
+                json[key] = prop;
         }
         return json;
     }

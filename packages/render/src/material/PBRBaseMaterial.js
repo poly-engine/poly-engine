@@ -1,5 +1,5 @@
 import { CompMode, CompType } from "@poly-engine/core";
-import { TextureCoordinate } from "./TextureCoordinate.js";
+import { TextureCoordinate } from "./enums/TextureCoordinate.js";
 
 export const PBRBaseMaterialDef = {
     type: CompType.Shared,

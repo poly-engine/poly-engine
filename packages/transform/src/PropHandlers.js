@@ -12,8 +12,9 @@ export class Vec2PropHandler{
     }
     toJson(cloneManager, propSchema, value, context){
         let propDefault = propSchema.default;
+        let outDefault = context.outDefault === true;
         let jsonValue = undefined;
-        if (!vec2.exactEquals(value, propDefault))
+        if (outDefault || !vec2.exactEquals(value, propDefault))
             jsonValue = vec2.clone(value);
         return jsonValue;
     }
@@ -31,8 +32,9 @@ export class Vec3PropHandler{
     }
     toJson(cloneManager, propSchema, value, context){
         let propDefault = propSchema.default;
-        let jsonValue = undefined;
-        if (!vec3.exactEquals(value, propDefault))
+        let outDefault = context.outDefault === true;
+        let jsonValue = undefined;outDefault
+        if (outDefault ||!vec3.exactEquals(value, propDefault))
             jsonValue = vec3.clone(value);
         return jsonValue;
     }
@@ -50,8 +52,9 @@ export class Vec4PropHandler{
     }
     toJson(cloneManager, propSchema, value, context){
         let propDefault = propSchema.default;
+        let outDefault = context.outDefault === true;
         let jsonValue = undefined;
-        if (!vec4.exactEquals(value, propDefault))
+        if (outDefault || !vec4.exactEquals(value, propDefault))
             jsonValue = vec4.clone(value);
         return jsonValue;
     }
@@ -69,8 +72,9 @@ export class QuatPropHandler{
     }
     toJson(cloneManager, propSchema, value, context){
         let propDefault = propSchema.default;
+        let outDefault = context.outDefault === true;
         let jsonValue = undefined;
-        if (!quat.exactEquals(value, propDefault))
+        if (outDefault || !quat.exactEquals(value, propDefault))
             jsonValue = quat.clone(value);
         return jsonValue;
     }
@@ -88,8 +92,9 @@ export class Mat4PropHandler{
     }
     toJson(cloneManager, propSchema, value, context){
         let propDefault = propSchema.default;
+        let outDefault = context.outDefault === true;
         let jsonValue = undefined;
-        if (!mat4.exactEquals(value, propDefault))
+        if (outDefault || !mat4.exactEquals(value, propDefault))
             jsonValue = mat4.clone(value);
         return jsonValue;
     }

@@ -1,6 +1,15 @@
-import { FogMode, ShadowCascadesMode } from "../constants";
+import { vec4 } from "@poly-engine/math";
+import { BlendFactor } from "../render/enums/BlendFactor";
+import { BlendOperation } from "../render/enums/BlendOperation";
+import { ColorWriteMask } from "../render/enums/ColorWriteMask";
+import { CompareFunction } from "../render/enums/CompareFunction";
+import { CullMode } from "../render/enums/CullMode";
+import { StencilOperation } from "../render/enums/StencilOperation";
 import { GLCapabilityType } from "./GLCapabilityType";
 
+/**
+ * @class GLManager
+ */
 export class GLManager {
     constructor(world) {
         this.world = world;
@@ -18,18 +27,19 @@ export class GLManager {
         this.parameters = {};
 
         this.renderState = null;
-        this.shaderData = null;
+        this._enableGlobalDepthBias = false;
+        // this.shaderData = null;
 
         this.materialEntity = -1;
         this.shaderEntity = -1;
         this.frontFace = 0;
         this.doubleSided = false;
 
-        this.macros = [];
-        // this.macros = [];
         this.nextMacroId = 0;
+        this.macros = [];
         this.nextMacroNameId = 0;
         this.macroNameIdMap = new Map();
+        this.macros1 = [];
         this.macroMap = new Map();
 
         this.properties = [];
@@ -40,8 +50,9 @@ export class GLManager {
         this.nextAttributeId = 0;
         this.attributeMap = new Map();
 
-        this._fogModeMacro = this.getMacro('SCENE_FOG_MODE', FogMode.None);
-        this._shadowCCMacro = this.getMacro('SCENE_SHADOW_CASCADED_COUNT', ShadowCascadesMode.NoCascades);
+        // this._fogModeMacro = this.getMacro('SCENE_FOG_MODE', FogMode.None);
+        // this._shadowCCMacro = this.getMacro('SCENE_SHADOW_CASCADED_COUNT', ShadowCascadesMode.NoCascades);
+        this._readFrameBuffer = null;
 
         this.init();
     }
@@ -55,13 +66,16 @@ export class GLManager {
         this._updateGLParameters();
 
         this._compatibleAllInterface();
-        
-        //init shader data
-        const shaderDataCom = this.world.entityManager.getComponentId("ShaderData");
-        this.shaderData = this.world.entityManager.createComponent(shaderDataCom);
 
-        this.enableMacro(this.shaderData, this._fogModeMacro, FogMode.None);
-        this.enableMacro(this.shaderData, this._shadowCCMacro, ShadowCascadesMode.NoCascades);
+        this.renderStateCom = this.world.entityManager.getComponentId("RenderState");
+        this.renderState = this.world.entityManager.createComponent(this.renderStateCom);
+
+        // //init shader data
+        // const shaderDataCom = this.world.entityManager.getComponentId("ShaderData");
+        // this.shaderData = this.world.entityManager.createComponent(shaderDataCom);
+
+        // this.enableMacro(this.shaderData, this._fogModeMacro, FogMode.None);
+        // this.enableMacro(this.shaderData, this._shadowCCMacro, ShadowCascadesMode.NoCascades);
     }
 
     _updateGLRenderState() {
@@ -318,7 +332,7 @@ export class GLManager {
             this.macroNameIdMap.set(name, nameId);
         }
         macro = { id, nameId, name, value, key };
-        this.macros[nameId] = macro;
+        this.macros[id] = macro;
         this.macroMap.set(key, macro);
         return macro;
     }
@@ -361,11 +375,19 @@ export class GLManager {
             macro = this.getMacro(macro.name, value);
         }
         // const lastMacro = this.macroNameIdMap.get(nameID);
-        const lastMacro = this.macros[nameId];
+        // const lastMacro = this.macros[nameId];
+        // if (lastMacro !== macro) {
+        //     this.macros[nameId] = macro;
+        // }
+        // shaderData.macros.or(nameId);
+        const lastMacro = this.macros1[nameId];
         if (lastMacro !== macro) {
-            this.macros[nameId] = macro;
+            this.macros1[nameId] = macro;
+            if (lastMacro != null)
+                shaderData.macros.not(lastMacro.id);
+
         }
-        shaderData.macros.or(nameId);
+        shaderData.macros.or(macro.id);
         return macro;
     }
     disableMacro(shaderData, macro) {
@@ -378,15 +400,427 @@ export class GLManager {
         }
         else
             nameId = macro.nameId;
-        const currentMacro = this.macros[nameId];
+        // const currentMacro = this.macros[nameId];
+        // if (currentMacro)
+        //     shaderData.macros.not(nameId);
+        const currentMacro = this.macros1[nameId];
         if (currentMacro)
-            shaderData.macros.not(nameId);
+            shaderData.macros.not(currentMacro.id);
     }
     getMacroNames(macroBitset, macroNameList) {
         macroBitset.forEachValues((value) => {
             macroNameList.push(this.macros[value].key);
         });
-        console.log(macroNameList);
+        // console.log(macroNameList);
+    }
+    //#endregion
+
+    _getReadFrameBuffer() {
+        let frameBuffer = this._readFrameBuffer;
+        if (!frameBuffer) {
+            this._readFrameBuffer = frameBuffer = this.gl.createFramebuffer();
+        }
+        return frameBuffer;
+    }
+
+    //#region renderState const
+
+    //#endregion
+
+    //#region renderState
+    applyRenderState(renderState, frontFaceInvert) {
+        const lastRenderState = this.renderState;
+        // this.blendState._apply(hardwareRenderer, lastRenderState);
+        this._applyBlendState(renderState.blendState, lastRenderState.blendState);
+        // this.depthState._apply(hardwareRenderer, lastRenderState);
+        this._applyDepthState(renderState.depthState, lastRenderState.depthState);
+        // this.stencilState._apply(hardwareRenderer, lastRenderState);
+        this._applyStencilState(renderState.stencilState, lastRenderState.stencilState);
+        // this.rasterState._apply(hardwareRenderer, lastRenderState, frontFaceInvert);
+        this._applyRasterState(renderState.rasterState, lastRenderState.rasterState, frontFaceInvert);
+    }
+    _getGLBlendFactor(blendFactor) {
+        const gl = this.gl;
+        switch (blendFactor) {
+            case BlendFactor.Zero:
+                return gl.ZERO;
+            case BlendFactor.One:
+                return gl.ONE;
+            case BlendFactor.SourceColor:
+                return gl.SRC_COLOR;
+            case BlendFactor.OneMinusSourceColor:
+                return gl.ONE_MINUS_SRC_COLOR;
+            case BlendFactor.DestinationColor:
+                return gl.DST_COLOR;
+            case BlendFactor.OneMinusDestinationColor:
+                return gl.ONE_MINUS_DST_COLOR;
+            case BlendFactor.SourceAlpha:
+                return gl.SRC_ALPHA;
+            case BlendFactor.OneMinusSourceAlpha:
+                return gl.ONE_MINUS_SRC_ALPHA;
+            case BlendFactor.DestinationAlpha:
+                return gl.DST_ALPHA;
+            case BlendFactor.OneMinusDestinationAlpha:
+                return gl.ONE_MINUS_DST_ALPHA;
+            case BlendFactor.SourceAlphaSaturate:
+                return gl.SRC_ALPHA_SATURATE;
+            case BlendFactor.BlendColor:
+                return gl.CONSTANT_COLOR;
+            case BlendFactor.OneMinusBlendColor:
+                return gl.ONE_MINUS_CONSTANT_COLOR;
+        }
+    }
+    _getGLBlendOperation(blendOperation) {
+        const gl = this.gl;
+        switch (blendOperation) {
+            case BlendOperation.Add:
+                return gl.FUNC_ADD;
+            case BlendOperation.Subtract:
+                return gl.FUNC_SUBTRACT;
+            case BlendOperation.ReverseSubtract:
+                return gl.FUNC_REVERSE_SUBTRACT;
+            case BlendOperation.Min:
+                if (!this.canIUse(GLCapabilityType.blendMinMax)) {
+                    throw new Error("BlendOperation.Min is not supported in this context");
+                }
+                return gl.MIN; // in webgl1.0 is an extension
+            case BlendOperation.Max:
+                if (!this.canIUse(GLCapabilityType.blendMinMax)) {
+                    throw new Error("BlendOperation.Max is not supported in this context");
+                }
+                return gl.MAX; // in webgl1.0 is an extension
+        }
+    }
+    _applyBlendState(state, lastState) {
+        const gl = this.gl;
+
+        const enabled = state.enabled;
+        if (enabled !== lastState.enabled) {
+            if (enabled) {
+                gl.enable(gl.BLEND);
+            } else {
+                gl.disable(gl.BLEND);
+            }
+            lastState.enabled = enabled;
+        }
+        const sourceColorBlendFactor = state.sourceColorBlendFactor;
+        const destinationColorBlendFactor = state.destinationColorBlendFactor;
+        const sourceAlphaBlendFactor = state.sourceAlphaBlendFactor;
+        const destinationAlphaBlendFactor = state.destinationAlphaBlendFactor;
+        const colorBlendOperation = state.colorBlendOperation;
+        const alphaBlendOperation = state.alphaBlendOperation;
+        if (enabled) {
+            // apply blend factor.
+            if (
+                sourceColorBlendFactor !== lastState.sourceColorBlendFactor ||
+                destinationColorBlendFactor !== lastState.destinationColorBlendFactor ||
+                sourceAlphaBlendFactor !== lastState.sourceAlphaBlendFactor ||
+                destinationAlphaBlendFactor !== lastState.destinationAlphaBlendFactor
+            ) {
+                gl.blendFuncSeparate(
+                    this._getGLBlendFactor(sourceColorBlendFactor),
+                    this._getGLBlendFactor(destinationColorBlendFactor),
+                    this._getGLBlendFactor(sourceAlphaBlendFactor),
+                    this._getGLBlendFactor(destinationAlphaBlendFactor)
+                );
+                lastState.sourceColorBlendFactor = sourceColorBlendFactor;
+                lastState.destinationColorBlendFactor = destinationColorBlendFactor;
+                lastState.sourceAlphaBlendFactor = sourceAlphaBlendFactor;
+                lastState.destinationAlphaBlendFactor = destinationAlphaBlendFactor;
+            }
+
+            // apply blend operation.
+            if (
+                colorBlendOperation !== lastState.colorBlendOperation ||
+                alphaBlendOperation !== lastState.alphaBlendOperation
+            ) {
+                gl.blendEquationSeparate(
+                    this._getGLBlendOperation(colorBlendOperation),
+                    this._getGLBlendOperation(alphaBlendOperation)
+                );
+                lastState.colorBlendOperation = colorBlendOperation;
+                lastState.alphaBlendOperation = alphaBlendOperation;
+            }
+
+            // apply blend color.
+            const blendColor = state.blendColor;
+            // if (!Color.equals(lastState.blendColor, blendColor)) {
+            if (!vec4.equals(lastState.blendColor, blendColor)) {
+                gl.blendColor(blendColor[0], blendColor[1], blendColor[2], blendColor[3]);
+                // lastState.blendColor.copyFrom(blendColor);
+                lastState.blendColor.copyFrom(blendColor);
+                vec4.copy(lastState.blendColor, blendColor)
+            }
+        }
+
+        // apply color mask.
+        const colorWriteMask = state.colorWriteMask;
+        if (colorWriteMask !== lastState.colorWriteMask) {
+            gl.colorMask(
+                (colorWriteMask & ColorWriteMask.Red) !== 0,
+                (colorWriteMask & ColorWriteMask.Green) !== 0,
+                (colorWriteMask & ColorWriteMask.Blue) !== 0,
+                (colorWriteMask & ColorWriteMask.Alpha) !== 0
+            );
+            lastState.colorWriteMask = colorWriteMask;
+        }
+
+        // apply alpha to coverage.
+        const alphaToCoverage = state.alphaToCoverage;
+        if (alphaToCoverage !== lastState.alphaToCoverage) {
+            if (alphaToCoverage) {
+                gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);
+            } else {
+                gl.disable(gl.SAMPLE_ALPHA_TO_COVERAGE);
+            }
+            lastState.alphaToCoverage = alphaToCoverage;
+        }
+    }
+
+    _getGLCompareFunction(compareFunction) {
+        const gl = this.gl;
+        switch (compareFunction) {
+            case CompareFunction.Never:
+                return gl.NEVER;
+            case CompareFunction.Less:
+                return gl.LESS;
+            case CompareFunction.Equal:
+                return gl.EQUAL;
+            case CompareFunction.LessEqual:
+                return gl.LEQUAL;
+            case CompareFunction.Greater:
+                return gl.GREATER;
+            case CompareFunction.NotEqual:
+                return gl.NOTEQUAL;
+            case CompareFunction.GreaterEqual:
+                return gl.GEQUAL;
+            case CompareFunction.Always:
+                return gl.ALWAYS;
+        }
+    }
+    _applyDepthState(state, lastState) {
+        const gl = this.gl;
+
+        const { enabled, compareFunction, writeEnabled } = state;
+
+        if (enabled != lastState.enabled) {
+            if (enabled) {
+                gl.enable(gl.DEPTH_TEST);
+            } else {
+                gl.disable(gl.DEPTH_TEST);
+            }
+            lastState.enabled = enabled;
+        }
+
+        if (enabled) {
+            // apply compare func.
+            if (compareFunction != lastState.compareFunction) {
+                gl.depthFunc(this._getGLCompareFunction(compareFunction));
+                lastState.compareFunction = compareFunction;
+            }
+
+            // apply write enabled.
+            if (writeEnabled != lastState.writeEnabled) {
+                gl.depthMask(writeEnabled);
+                lastState.writeEnabled = writeEnabled;
+            }
+        }
+    }
+
+    // _getGLCompareFunction(compareFunction) {
+    //     const gl = rhi.gl;
+
+    //     switch (compareFunction) {
+    //         case CompareFunction.Never:
+    //             return gl.NEVER;
+    //         case CompareFunction.Less:
+    //             return gl.LESS;
+    //         case CompareFunction.Equal:
+    //             return gl.EQUAL;
+    //         case CompareFunction.LessEqual:
+    //             return gl.LEQUAL;
+    //         case CompareFunction.Greater:
+    //             return gl.GREATER;
+    //         case CompareFunction.NotEqual:
+    //             return gl.NOTEQUAL;
+    //         case CompareFunction.GreaterEqual:
+    //             return gl.GEQUAL;
+    //         case CompareFunction.Always:
+    //             return gl.ALWAYS;
+    //     }
+    // }
+    _getGLStencilOperation(compareFunction) {
+        const gl = this.gl;
+        switch (compareFunction) {
+            case StencilOperation.Keep:
+                return gl.KEEP;
+            case StencilOperation.Zero:
+                return gl.ZERO;
+            case StencilOperation.Replace:
+                return gl.REPLACE;
+            case StencilOperation.IncrementSaturate:
+                return gl.INCR;
+            case StencilOperation.DecrementSaturate:
+                return gl.DECR;
+            case StencilOperation.Invert:
+                return gl.INVERT;
+            case StencilOperation.IncrementWrap:
+                return gl.INCR_WRAP;
+            case StencilOperation.DecrementWrap:
+                return gl.DECR_WRAP;
+        }
+    }
+    _applyStencilState(state, lastState) {
+        const gl = this.gl;
+
+        const {
+            enabled,
+            referenceValue,
+            mask,
+            compareFunctionFront,
+            compareFunctionBack,
+            failOperationFront,
+            zFailOperationFront,
+            passOperationFront,
+            failOperationBack,
+            zFailOperationBack,
+            passOperationBack,
+            writeMask
+        } = state;
+
+        if (enabled != lastState.enabled) {
+            if (enabled) {
+                gl.enable(gl.STENCIL_TEST);
+            } else {
+                gl.disable(gl.STENCIL_TEST);
+            }
+            lastState.enabled = enabled;
+        }
+
+        if (enabled) {
+            // apply stencil func.
+            const referenceOrMaskChange = referenceValue !== lastState.referenceValue || mask !== lastState.mask;
+            if (referenceOrMaskChange || compareFunctionFront !== lastState.compareFunctionFront) {
+                gl.stencilFuncSeparate(
+                    gl.FRONT,
+                    this._getGLCompareFunction(compareFunctionFront),
+                    referenceValue,
+                    mask
+                );
+                lastState.compareFunctionFront = compareFunctionFront;
+            }
+
+            if (referenceOrMaskChange || compareFunctionBack !== lastState.compareFunctionBack) {
+                gl.stencilFuncSeparate(gl.BACK, this._getGLCompareFunction(compareFunctionBack), referenceValue, mask);
+                lastState.compareFunctionBack = this.compareFunctionBack;
+            }
+            if (referenceOrMaskChange) {
+                lastState.referenceValue = this.referenceValue;
+                lastState.mask = this.mask;
+            }
+
+            // apply stencil operation.
+            if (
+                failOperationFront !== lastState.failOperationFront ||
+                zFailOperationFront !== lastState.zFailOperationFront ||
+                passOperationFront !== lastState.passOperationFront
+            ) {
+                gl.stencilOpSeparate(
+                    gl.FRONT,
+                    this._getGLStencilOperation(failOperationFront),
+                    this._getGLStencilOperation(zFailOperationFront),
+                    this._getGLStencilOperation(passOperationFront)
+                );
+                lastState.failOperationFront = failOperationFront;
+                lastState.zFailOperationFront = zFailOperationFront;
+                lastState.passOperationFront = passOperationFront;
+            }
+
+            if (
+                failOperationBack !== lastState.failOperationBack ||
+                zFailOperationBack !== lastState.zFailOperationBack ||
+                passOperationBack !== lastState.passOperationBack
+            ) {
+                gl.stencilOpSeparate(
+                    gl.BACK,
+                    this._getGLStencilOperation(failOperationBack),
+                    this._getGLStencilOperation(zFailOperationBack),
+                    this._getGLStencilOperation(passOperationBack)
+                );
+                lastState.failOperationBack = failOperationBack;
+                lastState.zFailOperationBack = zFailOperationBack;
+                lastState.passOperationBack = passOperationBack;
+            }
+
+            // apply write mask.
+            if (writeMask !== lastState.writeMask) {
+                gl.stencilMask(writeMask);
+                lastState.writeMask = writeMask;
+            }
+        }
+    }
+
+    _applyRasterState(state, lastState, frontFaceInvert) {
+        const gl = this.gl;
+
+        const { cullMode, depthBias, slopeScaledDepthBias } = state;
+
+        const cullFaceEnable = cullMode !== CullMode.Off;
+        if (cullFaceEnable !== lastState._cullFaceEnable) {
+            if (cullFaceEnable) {
+                gl.enable(gl.CULL_FACE);
+            } else {
+                gl.disable(gl.CULL_FACE);
+            }
+            lastState._cullFaceEnable = cullFaceEnable;
+        }
+
+        // apply front face.
+        if (cullFaceEnable) {
+            if (cullMode !== lastState.cullMode) {
+                if (cullMode == CullMode.Back) {
+                    gl.cullFace(gl.BACK);
+                } else {
+                    gl.cullFace(gl.FRONT);
+                }
+                lastState.cullMode = cullMode;
+            }
+        }
+
+        if (frontFaceInvert !== lastState._frontFaceInvert) {
+            if (frontFaceInvert) {
+                gl.frontFace(gl.CW);
+            } else {
+                gl.frontFace(gl.CCW);
+            }
+            lastState._frontFaceInvert = frontFaceInvert;
+        }
+
+        // apply polygonOffset.
+        if (!this._enableGlobalDepthBias) {
+            if (depthBias !== lastState.depthBias || slopeScaledDepthBias !== lastState.slopeScaledDepthBias) {
+                if (depthBias !== 0 || slopeScaledDepthBias !== 0) {
+                    gl.enable(gl.POLYGON_OFFSET_FILL);
+                    gl.polygonOffset(slopeScaledDepthBias, depthBias);
+                } else {
+                    gl.disable(gl.POLYGON_OFFSET_FILL);
+                }
+                lastState.depthBias = depthBias;
+                lastState.slopeScaledDepthBias = slopeScaledDepthBias;
+            }
+        }
+    }
+
+    setGlobalDepthBias(bias, slopeBias) {
+        const gl = this._gl;
+        const enable = bias !== 0 || slopeBias !== 0;
+        if (enable) {
+            gl.enable(gl.POLYGON_OFFSET_FILL);
+            gl.polygonOffset(slopeBias, bias);
+        } else {
+            gl.disable(gl.POLYGON_OFFSET_FILL);
+        }
+        this._enableGlobalDepthBias = enable;
     }
     //#endregion
 }

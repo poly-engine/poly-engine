@@ -66,3 +66,25 @@ export function equals(a, b) {
 export function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
+
+const radToDegreeFactor = 180 / Math.PI;
+/** The conversion factor that degree to radian. */
+const degreeToRadFactor = Math.PI / 180;
+
+/**
+ * Modify the specified r from radian to degree.
+ * @param {Number} r - The specified r
+ * @returns {Number} The degree value
+ */
+export function radianToDegree(r) {
+  return r * radToDegreeFactor;
+}
+
+/**
+ * Modify the specified d from degree to radian.
+ * @param {Number} d - The specified d
+ * @returns {Number} The radian value
+ */
+export function degreeToRadian(d) {
+  return d * degreeToRadFactor;
+}

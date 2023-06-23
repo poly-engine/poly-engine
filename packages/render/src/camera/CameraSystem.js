@@ -1,4 +1,4 @@
-import { mat4 } from "@poly-engine/math";
+import { glMatrix, mat4, vec4 } from "@poly-engine/math";
 import { BitSet, System, SystemGroupType } from "@poly-engine/core";
 import { ShaderSystem } from "../shader/ShaderSystem.js";
 
@@ -6,7 +6,7 @@ export class CameraSystem extends System {
     constructor(world) {
         super(world);
         this.groupId = SystemGroupType.LateUpdate;
-        this.index = 200;
+        this.index = 1200;
 
         // this.com_glState = this.em.getComponentId('GlState');
         // this.canvasStateCom = this.em.getComponentId('CanvasState');
@@ -38,11 +38,9 @@ export class CameraSystem extends System {
     init() {
         this.htmlManager = this.world.htmlManager;
         this.glManager = this.world.glManager;
-        /** @type {ShaderSystem} */
-        this.shaderSystem = this.glManager;//this.sm.getSystem(ShaderSystem);
 
-        this._inverseViewMatrixProp = this.shaderSystem.getProperty('camera_ViewInvMat');
-        this._cameraPositionProp = this.shaderSystem.getProperty('camera_Position');
+        this._inverseViewMatrixProp = this.glManager.getProperty('camera_ViewInvMat');
+        this._cameraPositionProp = this.glManager.getProperty('camera_Position');
 
     }
     _update(delta) {
@@ -82,14 +80,20 @@ export class CameraSystem extends System {
             cameraState.viewportHeight = this.htmlManager.height;
             cameraState.macroBitset = new BitSet();
 
-            // cameraState.clearFlag = getGlClearFlag(gl, camera.clearFlag);
+            cameraState.aspectRatio = camera.aspectRatio;
+            if (camera.aspectRatio === 0)
+                cameraState.aspectRatio = (cameraState.viewportWidth * camera.viewport[2]) / (cameraState.viewportHeight * camera.viewport[3])
 
             this.updateProjection(camera, cameraState);
             this._updatePV(cameraState, ltw);
 
+            let shaderData = em.createComponent(this.com_shaderData);
+            this.glManager.setPropertyValue(shaderData, this._inverseViewMatrixProp, cameraState.worldMat);
+            this.glManager.setPropertyValue(shaderData, this._cameraPositionProp, cameraState.position);
+
             this.que_cameraStateInit.defer(() => {
                 em.setComponent(entity, com_cameraState, cameraState);
-                em.setComponent(entity, this.com_shaderData);
+                em.setComponent(entity, this.com_shaderData, shaderData);
                 // let compId = em.getComponentIdByGroup(entity, 'ShaderData');
                 // if(compId === undefined)
                 //     em.setComponent(entity, this.com_shaderData);
@@ -106,71 +110,97 @@ export class CameraSystem extends System {
             let cameraState = em.getComponent(entity, com_cameraState);
             this._updatePV(cameraState, ltw);
         })
-        this.que_cameraShaderData.forEach(entity => {
-            let ltw = em.getComponent(entity, com_localToWorld);
-            let cameraState = em.getComponent(entity, com_cameraState);
-            let shaderData = em.getComponent(entity, this.com_shaderData);
+        // this.que_cameraShaderData.forEach(entity => {
+        //     let ltw = em.getComponent(entity, com_localToWorld);
+        //     let cameraState = em.getComponent(entity, com_cameraState);
+        //     let shaderData = em.getComponent(entity, this.com_shaderData);
 
-            this.shaderSystem.setPropertyValue(shaderData, this._inverseViewMatrixProp, cameraState.worldMat);
-            this.shaderSystem.setPropertyValue(shaderData, this._cameraPositionProp, cameraState.position);
-        })
+        //     this.glManager.setPropertyValue(shaderData, this._inverseViewMatrixProp, cameraState.worldMat);
+        //     this.glManager.setPropertyValue(shaderData, this._cameraPositionProp, cameraState.position);
+        // })
     }
     _updatePV(cameraState, ltw) {
         mat4.multiply(cameraState.pvMat, cameraState.pMat, ltw.worldInvMat);
         mat4.getTranslation(cameraState.position, ltw.worldMat);
-        cameraState.worldMat = ltw.worldMat;
-        cameraState.vMat = ltw.worldInvMat;
+        // cameraState.worldMat = ltw.worldMat;
+        mat4.copy(cameraState.worldMat, ltw.worldMat);
+        // cameraState.viewMat = ltw.worldInvMat;
+        mat4.copy(cameraState.viewMat, ltw.worldInvMat);
+
+        // const position = [0,0,0,1];
+        // const positionVS = vec4.transformMat4(position, position, cameraState.vMat);
+        // // v_positionVS = positionVS.xyz / positionVS.w;
+        // console.log(cameraState.worldMat, cameraState.vMat, position);
     }
     updateProjection(camera, cameraState) {
-        let width = cameraState.viewportWidth;
-        let height = cameraState.viewportHeight;
-        let aspect = width / height;
+        // let width = cameraState.viewportWidth;
+        // let height = cameraState.viewportHeight;
+        let aspect = cameraState.aspectRatio;
         if (camera.perspective) {
-            if (aspect < 1) {
-                // Portrait orientation.
-                mat4.perspective(
-                    cameraState.pMat,
-                    camera.fovY / aspect,
-                    aspect,
-                    camera.near,
-                    camera.far
-                );
-            } else {
-                // Landscape orientation.
-                mat4.perspective(
-                    cameraState.pMat,
-                    camera.fovY,
-                    aspect,
-                    camera.near,
-                    camera.far
-                );
-            }
+            mat4.perspective(
+                cameraState.pMat,
+                glMatrix.degreeToRadian(camera.fieldOfView),
+                // camera.fovY / aspect,
+                aspect,
+                camera.nearClipPlane,
+                camera.farClipPlane
+            );
+            // if (aspect < 1) {
+            //     // Portrait orientation.
+            //     mat4.perspective(
+            //         cameraState.pMat,
+            //         camera.fovY / aspect,
+            //         aspect,
+            //         camera.nearClipPlane,
+            //         camera.farClipPlane
+            //     );
+            // } else {
+            //     // Landscape orientation.
+            //     mat4.perspective(
+            //         cameraState.pMat,
+            //         camera.fovY,
+            //         aspect,
+            //         camera.nearClipPlane,
+            //         camera.farClipPlane
+            //     );
+            // }
         }
         else {
-            let target_aspect = camera.fovX / camera.fovY;
-            if (aspect < target_aspect) {
-                // Portrait orientation.
-                mat4.ortho(
-                    cameraState.pMat,
-                    camera.fovX / aspect,
-                    camera.fovX,
-                    -camera.fovX / aspect,
-                    -camera.fovX,
-                    camera.near,
-                    camera.far
-                );
-            } else {
-                // Landscape orientation.
-                mat4.ortho(
-                    cameraState.pMat,
-                    camera.fovY,
-                    camera.fovY * aspect,
-                    -camera.fovY,
-                    -camera.fovY * aspect,
-                    camera.near,
-                    camera.far
-                );
-            }
+            const width = camera.orthographicSize * aspect;
+            const height = camera.orthographicSize;
+            // Matrix.ortho(-width, width, -height, height, this._nearClipPlane, this._farClipPlane, projectionMatrix);
+            mat4.ortho(
+                cameraState.pMat,
+                -width, width,
+                -height, height,
+                camera.nearClipPlane,
+                camera.farClipPlane
+            );
+
+            // let target_aspect = camera.fovX / camera.fovY;
+            // if (aspect < target_aspect) {
+            //     // Portrait orientation.
+            //     mat4.ortho(
+            //         cameraState.pMat,
+            //         camera.fovX / aspect,
+            //         camera.fovX,
+            //         -camera.fovX / aspect,
+            //         -camera.fovX,
+            //         camera.nearClipPlane,
+            //         camera.farClipPlane
+            //     );
+            // } else {
+            //     // Landscape orientation.
+            //     mat4.ortho(
+            //         cameraState.pMat,
+            //         camera.fovY,
+            //         camera.fovY * aspect,
+            //         -camera.fovY,
+            //         -camera.fovY * aspect,
+            //         camera.nearClipPlane,
+            //         camera.farClipPlane
+            //     );
+            // }
         }
         mat4.invert(cameraState.pMatInv, cameraState.pMat);
     }

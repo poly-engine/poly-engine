@@ -18,8 +18,8 @@ export class OrbitControl1System extends System {
         this.groupId = SystemGroupType.LateUpdate;
         this.index = 10;
 
-        this.orbitControlCom = this.em.getComponentId('OrbitControl');
-        this.orbitControlStateCom = this.em.getComponentId('OrbitControlState');
+        this.orbitControlCom = this.em.getComponentId('OrbitControl1');
+        this.orbitControlStateCom = this.em.getComponentId('OrbitControlState1');
         this.transformCom = this.em.getComponentId('Transform');
         this.transformDirtyCom = this.em.getComponentId('TransformDirty');
         this.ltwCom = this.em.getComponentId('LocalToWorld');

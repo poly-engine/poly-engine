@@ -12,7 +12,7 @@ export const Texture2DStateDef = {
     mode: CompMode.State,
     schema: {
         // texture: { type: 'object', default: null },
-        // target: { type: 'number', default: 0 },
+        compressedMipFilled: { type: 'number', default: 0 },
         // isDepthTexture: { type: 'boolean', default: false }
     }
 };

@@ -15,3 +15,11 @@ export const LightDef = {
         shadowStrength: { type: 'number', default: 1.0 },
     }
 };
+
+// export const LightStateDef = {
+//     // type: CompType.Shared,
+//     schema: {
+//         color: { type: 'vec3', default: [1, 1, 1] },
+//         // cullingMask: { type: 'number', default: Layer.Everything },
+//     }
+// };

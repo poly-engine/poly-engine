@@ -1,5 +1,5 @@
 import { Module } from "@poly-engine/core";
-import { SceneDef, SceneFlagDef, SceneStateDef } from "./scene/Scene.js";
+import { SceneChangedDef, SceneDef, SceneFlagDef, SceneStateDef } from "./scene/Scene.js";
 import { SceneSystem } from "./scene/SceneSystem.js";
 import { SceneManager } from "./scene/SceneManager.js";
 
@@ -16,6 +16,7 @@ export class SceneModule extends Module {
         const sceneCom = em.registerComponent('Scene', SceneDef);
         const sceneStateCom = em.registerComponent('SceneState', SceneStateDef);
         const sceneFlagCom = em.registerComponent('SceneFlag', SceneFlagDef);
+        const sceneChangedCom = em.registerComponent('SceneChanged', SceneChangedDef);
 
         //query
         world.sceneManager = new SceneManager(world);

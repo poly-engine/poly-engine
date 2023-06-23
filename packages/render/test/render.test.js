@@ -1,6 +1,5 @@
 import { World, mat4, vec3 } from "@poly-engine/core";
 import { TransformModule } from "@poly-engine/transform";
-// import { MeshTopology, VertexElementFormat, VertexElementType } from "../src/constants.js";
 import { RenderModule, VertexElementType } from "../src/index.js";
 require('./webgl-mock/exports');
 

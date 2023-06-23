@@ -1,7 +1,11 @@
 import { System, SystemGroupType } from "@poly-engine/core";
-import { AssetSystem } from "@poly-engine/asset";
 import { ShaderSystem } from "../shader/ShaderSystem.js";
-import { BlendFactor, BlendMode, BlendOperation, CullMode, RenderFace, RenderQueueType } from "../constants.js";
+import { BlendFactor } from "../render/enums/BlendFactor";
+import { BlendOperation } from "../render/enums/BlendOperation";
+import { CullMode } from "../render/enums/CullMode";
+import { BlendMode } from "./enums/BlendMode.js";
+import { RenderFace } from "./enums/RenderFace.js";
+import { RenderQueueType } from "../render/enums/RenderQueueType.js";
 
 export class MaterialSystem extends System {
     constructor(world) {
@@ -11,7 +15,7 @@ export class MaterialSystem extends System {
 
         // this.em = this.world.entityManager;
         // this.qm = this.world.queryManager;
-        this.assetSystem = this.world.assetManager;
+        this.assetManager = this.world.assetManager;
 
         // this.com_glState = this.em.getComponentId('GlState');
         this.com_material = this.em.getComponentId('Material');
@@ -40,12 +44,12 @@ export class MaterialSystem extends System {
         // this._alphaCutoffId = this._alphaCutoffProp.id;
         this._transparentMacro = this.shaderSystem.getMacro('MATERIAL_IS_TRANSPARENT');
 
-        this.assetSystem.addAssetData({
+        this.assetManager.addAssetData({
             Asset: { id: 'mat_unlit', type: 'Material', },
             Material: { id: 'mat_unlit', shaderRef: 'sha_unlit' },
             UnlitMaterial: { id: 'mat_unlit', baseColor: [1, 0, 0, 1] }
         });
-        this.assetSystem.addAssetData({
+        this.assetManager.addAssetData({
             Asset: { id: 'mat_phong', type: 'Material', },
             Material: { id: 'mat_phong', shaderRef: 'sha_phong' },
             PhongMaterial: { id: 'mat_phong', baseColor: [1, 0, 0, 1] }
@@ -53,7 +57,7 @@ export class MaterialSystem extends System {
     }
 
     createUnlitMaterialData(id = null, baseColor, baseTextureRef) {
-        const data = this.assetSystem.createAssetData(id, "Material", "Material", "BaseMaterial", "UnlitMaterial");
+        const data = this.assetManager.createAssetData(id, "Material", "Material", "BaseMaterial", "UnlitMaterial");
         data.Material.shaderRef = 'sha_unlit';
         if (baseColor != null)
             data.BaseMaterial.baseColor = baseColor;
@@ -62,33 +66,36 @@ export class MaterialSystem extends System {
         return data;
     }
     createPhongMaterialData(id = null) {
-        const data = this.assetSystem.createAssetData(id, "Material", "Material", "BaseMaterial", "PhongBaseMaterial", "PhongMaterial");
+        const data = this.assetManager.createAssetData(id, "Material", "Material", "BaseMaterial", "PhongBaseMaterial", "PhongMaterial");
         data.Material.shaderRef = 'sha_phong';
         return data;
     }
     createPBRMaterialData(id = null) {
-        const data = this.assetSystem.createAssetData(id, "Material", "Material", "BaseMaterial", "PhongBaseMaterial", "PBRBaseMaterial", "PBRMaterial");
+        const data = this.assetManager.createAssetData(id, "Material", "Material", "BaseMaterial", "PhongBaseMaterial", "PBRBaseMaterial", "PBRMaterial");
         data.Material.shaderRef = 'sha_pbr';
         return data;
     }
     createPBRSpecularMaterialData(id = null) {
-        const data = this.assetSystem.createAssetData(id, "Material", "Material", "BaseMaterial", "PhongBaseMaterial", "PBRBaseMaterial", "PBRSpecularMaterial");
+        const data = this.assetManager.createAssetData(id, "Material", "Material", "BaseMaterial", "PhongBaseMaterial", "PBRBaseMaterial", "PBRSpecularMaterial");
         data.Material.shaderRef = 'sha_pbr';
+        return data;
+    }
+    createSkyBoxMaterialData(id = null, isAdd = false) {
+        const data = this.assetManager.createAssetData(id, "Material", "Material", "SkyBoxMaterial");
+        data.Material.shaderRef = 'skybox';
+        if(isAdd)
+            this.assetManager.addAssetData(data);
         return data;
     }
 
     _update() {
         const em = this.em;
 
-        // let glState = em.getSingletonComponent(this.com_glState);
-        // if (!glState)
-        //     return;
-
         this.que_materialStateInit.forEach(entity => {
             const material = em.getComponent(entity, this.com_material);
             this.que_materialStateInit.defer(() => {
                 let materialState = em.createComponent(this.com_materialState);
-                materialState.shaderEnt = this.assetSystem.loadAssetEntity(material.shaderRef);
+                materialState.shaderEnt = this.assetManager.loadAssetEntity(material.shaderRef);
                 em.setComponent(entity, this.com_materialState, materialState);
 
                 //add shaderData
@@ -112,7 +119,7 @@ export class MaterialSystem extends System {
         this.que_materialStateRelease.forEach(entity => {
             this.que_materialStateRelease.defer(() => {
                 const mrs = em.getComponent(entity, this.com_materialState);
-                this.assetSystem.unloadAssetEntity(mrs.shaderEnt);
+                this.assetManager.unloadAssetEntity(mrs.shaderEnt);
                 em.removeComponent(entity, this.com_materialState);
             });
         })

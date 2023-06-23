@@ -1,15 +1,28 @@
 
+/**
+ * @class CompBuffer
+ */
 export class CompBuffer {
     get length() {
         return this.array.length;
     }
     constructor(store) {
+        /** @type {CompStore} */
         this.store = store;
         this.array = [];
     }
     add(comp, index) {
         comp ??= this.store.create();
         if (index === undefined)
+            this.array.push(comp);
+        else {
+            this.array.splice(index, 0, comp);
+        }
+        return comp;
+    }
+    add1(index, comp, ...args) {
+        comp ??= this.store.create(...args);
+        if (index === -1)
             this.array.push(comp);
         else {
             this.array.splice(index, 0, comp);

@@ -37,13 +37,15 @@
       "@poly-engine/transform": "../node_modules/@poly-engine/transform/dist/module.js",
       "@poly-engine/asset": "../node_modules/@poly-engine/asset/dist/module.js",
       "@poly-engine/input": "../node_modules/@poly-engine/input/dist/module.js",
+      "@poly-engine/scene": "../node_modules/@poly-engine/scene/dist/module.js",
       "@poly-engine/render": "../node_modules/@poly-engine/render/dist/module.js",
       "@poly-engine/controls": "../node_modules/@poly-engine/controls/dist/module.js"
     }
   }
 </script>
+<!-- <script type="module", src="https://github.com/dataarts/dat.gui/blob/master/build/dat.gui.module.js"></script> -->
 <script type="module">
-        // "gl-matrix": "../node_modules/gl-matrix/esm/index.js",
+  // "gl-matrix": "../node_modules/gl-matrix/esm/index.js",
 
   import { World, System, SystemGroupType, BaseModule, HtmlBaseModule } from "@poly-engine/core";
   import { TransformModule } from "@poly-engine/transform";
@@ -51,11 +53,13 @@
   import { InputModule, InputDeviceType, MouseControl, Keys, InputControlType, InputButtonState } from "@poly-engine/input";
   // import { RenderModule, VertexElementType, GeometryUtil, MeshTopology, TextureUtil, RenderQueue } from '../src/index.js';
   import { RenderModule, VertexElementType, GeometryUtil, MeshTopology, TextureUtil, RenderQueueType, Texture2DLoader } from '@poly-engine/render';
-  import { BaseMaterialSystem, PhongMaterialSystem, PhongBaseMaterialSystem } from '@poly-engine/render';
+  import { BaseMaterialSystem, PhongMaterialSystem, PhongBaseMaterialSystem, FogMode } from '@poly-engine/render';
   import { ControlsModule } from "@poly-engine/controls";
+  import { SceneModule } from "@poly-engine/scene";
 
   import { quat, vec3 } from "@poly-engine/math";
-  import { GUI } from './libs/lil-gui.esm.min.js';
+  // import { GUI } from './libs/lil-gui.esm.min.js';
+  import * as dat from "./libs/dat.gui.module.js";
 
   class RotateSystem extends System {
     constructor(world) {
@@ -100,12 +104,12 @@
         InputAction: { id: "rot", controlType: InputControlType.Button },
         BaseControlBinding: [
           {
-            deviceType:InputDeviceType.Keyboard,
+            deviceType: InputDeviceType.Keyboard,
             controlId: Keys.KeyL,
             buttonState: InputButtonState.Up
           },
           {
-            deviceType:InputDeviceType.Mouse,
+            deviceType: InputDeviceType.Mouse,
             controlId: MouseControl.Left,
             buttonState: InputButtonState.Up,
             controls: [{ deviceType: InputDeviceType.Keyboard, controlId: Keys.ControlLeft }]
@@ -156,6 +160,7 @@
   world.moduleManager.addModule(new HtmlBaseModule(world, canvasElement));
   world.moduleManager.addModule(AssetModule);
   world.moduleManager.addModule(TransformModule);
+  world.moduleManager.addModule(SceneModule);
   world.moduleManager.addModule(RenderModule);
   world.moduleManager.addModule(InputModule);
   world.moduleManager.addModule(ControlsModule);
@@ -163,6 +168,11 @@
 
   const em = world.entityManager;
   const lm = world.loadManager;
+  const transformManager = world.transformManager;
+  const assetManager = world.assetManager;
+  const sceneManager = world.sceneManager;
+  const sceneFogSys = world.systemManager.getSystem("SceneFogSystem");
+
   // const com_canvas = em.getComponentId('Canvas');
   const com_glState = em.getComponentId('GlState');
   const com_transform = em.getComponentId('Transform');
@@ -185,33 +195,58 @@
   // const com_unlitData = em.getComponentId('UnlitData');
   const lightCom = em.getComponentId('Light');
   const directLightCom = em.getComponentId('DirectLight');
+  const pointLightCom = em.getComponentId('PointLight');
+  const spotLightCom = em.getComponentId('SpotLight');
 
   const assetCom = em.getComponentId('Asset');
 
   const orbitControlCom = em.getComponentId('OrbitControl');
 
+  const fogCom = em.getComponentId('Fog');
+  const ambientLightCom = em.getComponentId('AmbientLight');
+  const backgroundCom = em.getComponentId('Background');
+  const skyCom = em.getComponentId('Sky');
+
+  const geometrySys = world.systemManager.getSystem("GeometrySystem");
+  const materialSys = world.systemManager.getSystem("MaterialSystem");
   const phoneMaterialSys = world.systemManager.getSystem(PhongMaterialSystem);
   const baseMaterialSys = world.systemManager.getSystem(BaseMaterialSystem);
   const phongBaseMaterialSys = world.systemManager.getSystem(PhongBaseMaterialSystem);
 
-  const transformSys = world.systemManager.getSystem("TransformSystem");
+  // const transformSys = world.systemManager.getSystem("TransformSystem");
 
   // //add canvas
   // let canvasEntity = em.createEntity();
   // em.setComponentByArgs(canvasEntity, com_canvas, '#c');
 
-  //add light
+  //add directlight
   let light1Ent = em.createEntity();
   let light1Tra = em.setComponentByArgs(light1Ent, com_transform, [0, 0, 0], quat.rotateY([0, 0, 0, 1], [0, 0, 0, 1], Math.PI / 4));
   em.setComponent(light1Ent, lightCom);
   em.setComponent(light1Ent, directLightCom);
+  // let light2Ent = em.createEntity();
+  // em.setComponentByArgs(light2Ent, com_transform, [0, 0, 0], quat.rotateY([0, 0, 0, 1], [0, 0, 0, 1], Math.PI / 4 * 5));
+  // em.setComponentByArgs(light2Ent, lightCom, [1,0,0,1], 0.1);
+  // em.setComponent(light2Ent, directLightCom);
+
+  //add point light
+  let plight1Ent = em.createEntity();
+  em.setComponentByArgs(plight1Ent, com_transform, [50, 50, -50]);
+  em.setComponentByArgs(plight1Ent, lightCom, [1, 0, 0, 1]);
+  em.setComponent(plight1Ent, pointLightCom);
+  //add spot light
+  let slight1Ent = em.createEntity();
+  em.setComponentByArgs(slight1Ent, com_transform, [0, 50, 0], quat.rotateX([0, 0, 0, 1], [0, 0, 0, 1], -Math.PI / 2));
+  em.setComponentByArgs(slight1Ent, lightCom, [0, 1, 0, 1]);
+  em.setComponent(slight1Ent, spotLightCom);
 
   //add camera
   let cameraEntity = em.createEntity();
   // let transform = em.setComponentByArgs(cameraEntity, com_transform, [-1, 0, 1], quat.rotateY([0, 0, 0, 1], [0, 0, 0, 1], -Math.PI / 4));
-  let transform = em.setComponentByArgs(cameraEntity, com_transform, [0, 10, 20]);
+  let transform = em.setComponentByArgs(cameraEntity, com_transform, [0, 0, 3]);
   let camera = em.setComponent(cameraEntity, com_camera);
   camera.fovY = 1;
+  let orbitControl = em.setComponent(cameraEntity, orbitControlCom);
 
   // const textureLoader = new Texture2DLoader(world.assetManager);
   // const tex1Data = await textureLoader.loadAsync("./resources/normal/a.png");
@@ -231,69 +266,145 @@
       type: "Prefab",
       url: "https://gw.alipayobjects.com/os/bmw-prod/72a8e335-01da-4234-9e81-5f8b56464044.gltf",
     },
+    // {
+    //   type: "Prefab",
+    //   url: "https://gw.alipayobjects.com/os/OasisHub/267000040/9994/%25E5%25BD%2592%25E6%25A1%25A3.gltf",
+    // },
+    // {
+    //   //helmet
+    //   type: "Prefab",
+    //   url: "https://gw.alipayobjects.com/os/bmw-prod/150e44f6-7810-4c45-8029-3575d36aff30.gltf",
+    // },
+    // {
+    //   //wukong
+    //   type: "Prefab",
+    //   url: "https://cdn.orillusion.com/gltfs/wukong/wukong.gltf",
+    // },
     {
+      //FlightHelmet
       type: "Prefab",
-      url: "https://gw.alipayobjects.com/os/OasisHub/267000040/9994/%25E5%25BD%2592%25E6%25A1%25A3.gltf",
+      url: "https://cdn.orillusion.com/PBR/FlightHelmet/FlightHelmet.gltf",
+    },
+    // {
+    //   type: "Prefab",
+    //   url: "https://gw.alipayobjects.com/os/OasisHub/19748279-7b9b-4c17-abdf-2c84f93c54c8/oasis-file/1670226408346/low_poly_scene_forest_waterfall.gltf",
+    // }
+    {
+      type: "AmbientLight",
+      url: "https://gw.alipayobjects.com/os/bmw-prod/6470ea5e-094b-4a77-a05f-4945bf81e318.bin",
     }
   ]);
-  console.log(res[3]);
-  const meshData0 = res[2].meshes[0][0];
-  const meshData1 = res[2].meshes[1][0];
-  const meshData2 = res[2].meshes[2][0];
-  world.assetManager.addAssetData(meshData0);
-  world.assetManager.addAssetData(meshData1);
-  world.assetManager.addAssetData(meshData2);
-  const texData0 = res[3].textures[0];
-  world.assetManager.addAssetData(texData0);
+  console.log(res[2]);
+  // console.log(res[5]);
+  const ambientLightData = res[4];
+  // const meshData0 = res[2].meshes[0][0];
+  // const meshData1 = res[2].meshes[1][0];
+  // const meshData2 = res[2].meshes[2][0];
+  // assetManager.addAssetData(meshData0);
+  // assetManager.addAssetData(meshData1);
+  // assetManager.addAssetData(meshData2);
+  // const texData0 = res[3].textures[0];
+  // assetManager.addAssetData(texData0);
 
-  //add material 
-  let mat1Entity = em.createEntity();
-  em.setComponentByArgs(mat1Entity, assetCom, 'mat1', 'Material');
-  em.setComponentByArgs(mat1Entity, materialCom, 'mat1', 'sha_phong');
-  const baseMat = em.setComponentByArgs(mat1Entity, baseMaterialCom, 'mat1');
-  const phongBaseMat = em.setComponentByArgs(mat1Entity, phongBaseMaterialCom, 'mat1');
-  const phongMat = em.setComponentByArgs(mat1Entity, phongMaterialCom, 'mat1');
-  // bpMaterial.baseColor=[1,0,0,1];
-  // bpMaterial.specularColor=[1,0,0,1];
-  // baseMat.baseTextureRef = res[0].Asset.id;
-  baseMat.baseTextureRef = texData0.Asset.id;
-  phongBaseMat.normalTextureRef = res[1].Asset.id;
-  phongMat.shininess = 1000;
+  // const bundle1 = res[2];
+  // bundle1.materials.forEach((data) => {
+  //   data.BaseMaterial.baseTextureRef = res[0].Asset.id;
+  //   data.PhongBaseMaterial.normalTextureRef = res[1].Asset.id;
+  // });
+  // assetManager.addAssetBundle(bundle1);
+  // const scene1Ent = sceneManager.loadSceneEntity(bundle1.defaultSceneRoot.Asset.id);
 
-  //add box geometry
-  let geo1Entity = em.createEntity();
-  em.setComponentByArgs(geo1Entity, assetCom, 'geo1', 'Geometry');
-  em.setComponentByArgs(geo1Entity, boxGeometryCom, 1, 1, 1);
+  // const bundle2 = res[3];
+  // assetManager.addAssetBundle(bundle2);
+  // // const rootEnt = bundle2.defaultSceneRoot.Scene.entDatas[0];
+  // // rootEnt.Transform.scale = [1,1,1];
+  // const scene1Ent = sceneManager.loadSceneEntity(bundle2.defaultSceneRoot.Asset.id);
+
+  const bundle3 = res[3];
+  assetManager.addAssetBundle(bundle3);
+  // const rootEnt = bundle2.defaultSceneRoot.Scene.entDatas[0];
+  // rootEnt.Transform.scale = [1,1,1];
+  const scene1Ent = sceneManager.loadSceneEntity(bundle3.defaultSceneRoot.Asset.id);
+
+  // const bundle4 = res[5];
+  // assetManager.addAssetBundle(bundle4);
+  // const scene1Ent = sceneManager.loadSceneEntity(bundle4.defaultSceneRoot.Asset.id);
+
+  //add fog to scene
+  const fog = em.setComponent(scene1Ent, fogCom);
+  fog.fogMode = FogMode.Exponential;
+  fog.fogColor = [1, 0, 0, 1];
+
+  //add background to scene
+  const background = em.setComponent(scene1Ent, backgroundCom);
+  background.solidColor = [1, 0, 0, 1];
+  background.ambientLightRef = ambientLightData.Asset.id;
+
+  //add sky
+  const skyMatData = materialSys.createSkyBoxMaterialData("temp_mat_sky", true);
+  skyMatData.SkyBoxMaterial.textureRef = ambientLightData.AmbientLight.specularTextureRef;
+  // skyMatData.SkyBoxMaterial.tintColor = [1, 0, 0, 1];
+  skyMatData.SkyBoxMaterial.textureDecodeRGBM = true;
+  const skyGeoData = geometrySys.createBoxGeometryData("temp_geo_sky", true);
+  // skyMatData.SkyBoxMaterial.textureRef = ambientLightData.AmbientLight.specularTextureRef;
+
+  const sky = em.setComponent(scene1Ent, skyCom);
+  sky.matRef = skyMatData.Asset.id;
+  sky.geoRef = skyGeoData.Asset.id;
+  // background.ambientLightRef = ambientLightData.Asset.id;
+
+  sceneManager.addEntityToScene(light1Ent, scene1Ent);
+  sceneManager.addEntityToScene(plight1Ent, scene1Ent);
+  sceneManager.addEntityToScene(slight1Ent, scene1Ent);
+  sceneManager.addEntityToScene(cameraEntity, scene1Ent);
+  // //add material 
+  // let mat1Entity = em.createEntity();
+  // em.setComponentByArgs(mat1Entity, assetCom, 'mat1', 'Material');
+  // em.setComponentByArgs(mat1Entity, materialCom, 'mat1', 'sha_phong');
+  // const baseMat = em.setComponentByArgs(mat1Entity, baseMaterialCom, 'mat1');
+  // const phongBaseMat = em.setComponentByArgs(mat1Entity, phongBaseMaterialCom, 'mat1');
+  // const phongMat = em.setComponentByArgs(mat1Entity, phongMaterialCom, 'mat1');
+  // // bpMaterial.baseColor=[1,0,0,1];
+  // // bpMaterial.specularColor=[1,0,0,1];
+  // // baseMat.baseTextureRef = res[0].Asset.id;
+  // baseMat.baseTextureRef = texData0.Asset.id;
+  // phongBaseMat.normalTextureRef = res[1].Asset.id;
+  // phongMat.shininess = 1000;
 
   // //add box geometry
-  // let geo2Entity = em.createEntity();
-  // em.setComponentByArgs(geo2Entity, assetCom, 'geo2', 'Geometry');
-  // em.setComponentByArgs(geo2Entity, sphereGeometryCom, 0.5, 20, 10);
+  // let geo1Entity = em.createEntity();
+  // em.setComponentByArgs(geo1Entity, assetCom, 'geo1', 'Geometry');
+  // em.setComponentByArgs(geo1Entity, boxGeometryCom, 1, 1, 1);
 
-  //add mesh1
-  let mesh0Entity = em.createEntity();
-  transform = em.setComponent(mesh0Entity, com_transform);
-  em.setComponentByArgs(mesh0Entity, meshRendererCom, meshData0.Asset.id, 'mat1');
-  // em.setComponentByArgs(mesh1Entity, meshRendererCom, "geo1", 'mat1');
-  let mesh1Entity = em.createEntity();
-  transform = em.setComponent(mesh1Entity, com_transform);
-  em.setComponentByArgs(mesh1Entity, meshRendererCom, meshData1.Asset.id, 'mat1');
-  let mesh2Entity = em.createEntity();
-  transform = em.setComponent(mesh2Entity, com_transform);
-  em.setComponentByArgs(mesh2Entity, meshRendererCom, meshData2.Asset.id, 'mat1');
+  // // //add box geometry
+  // // let geo2Entity = em.createEntity();
+  // // em.setComponentByArgs(geo2Entity, assetCom, 'geo2', 'Geometry');
+  // // em.setComponentByArgs(geo2Entity, sphereGeometryCom, 0.5, 20, 10);
 
-  let meshRootEntity = em.createEntity();
-  transform = em.setComponent(meshRootEntity, com_transform);
-  let orbitControl = em.setComponent(meshRootEntity, orbitControlCom);
-  // orbitControl.isLockMove = true;
-  orbitControl.isLockZ = true;
-  transformSys.setParent(mesh0Entity, meshRootEntity);
-  transformSys.setParent(mesh1Entity, meshRootEntity);
-  transformSys.setParent(mesh2Entity, meshRootEntity);
-  // //add mesh2
+  // //add mesh1
+  // let mesh0Entity = em.createEntity();
+  // transform = em.setComponent(mesh0Entity, com_transform);
+  // em.setComponentByArgs(mesh0Entity, meshRendererCom, meshData0.Asset.id, 'mat1');
+  // // em.setComponentByArgs(mesh1Entity, meshRendererCom, "geo1", 'mat1');
+  // let mesh1Entity = em.createEntity();
+  // transform = em.setComponent(mesh1Entity, com_transform);
+  // em.setComponentByArgs(mesh1Entity, meshRendererCom, meshData1.Asset.id, 'mat1');
   // let mesh2Entity = em.createEntity();
-  // transform = em.setComponentByArgs(mesh2Entity, com_transform, [0, 0, 2]);
-  // em.setComponentByArgs(mesh2Entity, meshRendererCom, 'geo2', 'mat_unlit');
+  // transform = em.setComponent(mesh2Entity, com_transform);
+  // em.setComponentByArgs(mesh2Entity, meshRendererCom, meshData2.Asset.id, 'mat1');
+
+  // let meshRootEntity = em.createEntity();
+  // transform = em.setComponent(meshRootEntity, com_transform);
+  // let orbitControl = em.setComponent(meshRootEntity, orbitControlCom);
+  // // orbitControl.isLockMove = true;
+  // orbitControl.isLockZ = true;
+  // transformManager.setParent(mesh0Entity, meshRootEntity);
+  // transformManager.setParent(mesh1Entity, meshRootEntity);
+  // transformManager.setParent(mesh2Entity, meshRootEntity);
+  // // //add mesh2
+  // // let mesh2Entity = em.createEntity();
+  // // transform = em.setComponentByArgs(mesh2Entity, com_transform, [0, 0, 2]);
+  // // em.setComponentByArgs(mesh2Entity, meshRendererCom, 'geo2', 'mat_unlit');
 
 
   let lastTime;
@@ -309,28 +420,112 @@
 
   console.log(world);
 
-  const gui = new GUI();
-  function addGUI() {
-    const state = {
-      baseColor: [1, 1, 1],
-      specularColor: [255, 255, 255],
-      shininess: 64,
-      normalIntensity: 1,
-      isTransparent: false,
-      opacity: 1,
+  // const gui = new GUI();
+  // function addMaterialGUI() {
+  //   const state = {
+  //     baseColor: [1, 1, 1],
+  //     specularColor: [1, 1, 1],
+  //     shininess: 64,
+  //     normalIntensity: 1,
+  //     isTransparent: false,
+  //     opacity: 1,
+  //   };
+
+  //   gui.addColor(state, "baseColor").onChange((v) => {
+  //     baseMaterialSys.setBaseColor(mat1Entity, [v[0], v[1], v[2], state.opacity]);
+  //   });
+  //   gui.add(state, "shininess", 0, 100).onChange((v) => {
+  //     phoneMaterialSys.setShininess(mat1Entity, v);
+  //   });
+  //   gui.add(state, "normalIntensity", 0, 1, 0.1).onChange((v) => {
+  //     phongBaseMaterialSys.setNormalIntensity(mat1Entity, v);
+  //   });
+  // }
+  // addMaterialGUI();
+
+  function addFogGUI(scene) {
+    let fogStartItem;
+    let fogEndItem;
+    let fogDensityItem;
+    const gui = new dat.GUI();
+
+    let switchMode = (mode) => {
+      switch (mode) {
+        case FogMode.None:
+          clearModeItems();
+          break;
+        case FogMode.Linear:
+          clearModeItems();
+          fogStartItem = gui.add(debugInfos, "fogStart", 0, 300).onChange((v) => {
+            // scene.fogStart = v;
+            sceneFogSys.setFogStart(scene, v);
+          });
+
+          fogEndItem = gui.add(debugInfos, "fogEnd", 0, 300).onChange((v) => {
+            // scene.fogEnd = v;
+            sceneFogSys.setFogEnd(scene, v);
+          });
+          break;
+        case FogMode.Exponential:
+        case FogMode.ExponentialSquared:
+          clearModeItems();
+          fogDensityItem = gui
+            .add(debugInfos, "fogDensity", 0.01, 0.1)
+            .onChange((v) => {
+              // scene.fogDensity = v;
+              sceneFogSys.setFogDensity(scene, v);
+            });
+          break;
+      }
+      // scene.fogMode = mode;
+      sceneFogSys.setFogMode(scene, mode);
     };
 
-    gui.addColor(state, "baseColor").onChange((v) => {
-      baseMaterialSys.setBaseColor(mat1Entity, [v[0], v[1], v[2], state.opacity]);
+    let clearModeItems = () => {
+      if (fogStartItem) {
+        fogStartItem.remove();
+        fogStartItem = null;
+      }
+      if (fogEndItem) {
+        fogEndItem.remove();
+        fogEndItem = null;
+      }
+      if (fogDensityItem) {
+        fogDensityItem.remove();
+        fogDensityItem = null;
+      }
+    };
+
+    // const fogColor = scene.fogColor;
+    // const fog = em.getComponent(scene, fogCom);
+    const fogColor = fog.fogColor;
+    const debugInfos = {
+      fogMode: fog.fogMode,
+      fogColor: [fogColor[0] * 255, fogColor[1] * 255, fogColor[2] * 255],
+      fogStart: fog.fogStart,
+      fogEnd: fog.fogEnd,
+      fogDensity: fog.fogDensity,
+    };
+
+    gui
+      .add(debugInfos, "fogMode", {
+        None: FogMode.None,
+        Linear: FogMode.Linear,
+        Exponential: FogMode.Exponential,
+        ExponentialSquared: FogMode.ExponentialSquared,
+      })
+      .onChange((v) => {
+        switchMode(parseInt(v));
+      });
+
+    gui.addColor(debugInfos, "fogColor").onChange((v) => {
+      // scene.fogColor.set(v[0] / 255, v[1] / 255, v[2] / 255, 1.0);
+      sceneFogSys.setFogColor(scene, [v[0] / 255, v[1] / 255, v[2] / 255, 1.0]);
     });
-    gui.add(state, "shininess", 0, 100).onChange((v) => {
-      phoneMaterialSys.setShininess(mat1Entity, v);
-    });
-    gui.add(state, "normalIntensity", 0, 1, 0.1).onChange((v) => {
-      phongBaseMaterialSys.setNormalIntensity(mat1Entity, v);
-    });
+
+    switchMode(fog.fogMode);
   }
-  addGUI();
+  addFogGUI(scene1Ent);
 
 </script>
 

@@ -1,5 +1,5 @@
 import { World } from "@poly-engine/core";
-import { mat4 } from "@poly-engine/math";
+import { mat4, quat, vec3 } from "@poly-engine/math";
 import { TransformModule } from "../src/index.js";
 
 /** @type {World} */
@@ -9,6 +9,7 @@ let em;
 let systemManager;
 let moduleManager;
 let transformManager;
+let com_transform, com_localToWorld, com_parent;
 
 beforeAll(() => {
     world = new World();
@@ -20,6 +21,10 @@ beforeAll(() => {
     moduleManager.addModule(TransformModule);
     transformManager = world.transformManager;
     // transformSystem = systemManager.getSystem('TransformSystem');
+
+    com_transform = em.getComponentId('Transform');
+    com_localToWorld = em.getComponentId('LocalToWorld');
+    com_parent = em.getComponentId('Parent');
 });
 afterAll(() => {
     world.destroy();
@@ -27,9 +32,6 @@ afterAll(() => {
 
 describe('transform module', () => {
     it('transform', () => {
-        const com_transform = em.getComponentId('Transform');
-        const com_localToWorld = em.getComponentId('LocalToWorld');
-        const com_parent = em.getComponentId('Parent');
 
         let e0 = em.createEntity(com_transform);
         let e00 = em.createEntity(com_transform);
@@ -77,5 +79,25 @@ describe('transform module', () => {
         em.destroyEntity(e0);
         em.destroyEntity(e00);
         em.destroyEntity(e01);
-    })
+    });
+    it('set pos/matrix', () => {
+        let e0 = em.createEntity(com_transform);
+        let e00 = em.createEntity(com_transform);
+        let transform = em.getComponent(e0, com_transform);
+
+        world.update(1);
+
+        const axisY = [0,1,0];
+        let matrix = mat4.create();
+        let rot = quat.create();
+        let pos = [1,2,3];
+        quat.setAxisAngle(rot, axisY, Math.PI/4);
+        mat4.fromRotationTranslation(matrix, rot, pos);
+
+        transformManager.setWorldMatrix(e0, matrix);
+
+        expect(vec3.equals(pos, transform.position)).toBe(true);
+        expect(quat.equals(rot, transform.rotation)).toBe(true);
+
+    });
 })

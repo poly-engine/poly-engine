@@ -20,6 +20,7 @@ export { GeometrySystem } from './geometry/GeometrySystem.js';
 
 // export { ShaderStateSystem } from './shader/ShaderStateSystem.js';
 export { ShaderSystem } from './shader/ShaderSystem.js';
+export { ShaderManager } from './shader/ShaderManager.js';
 
 // export { MaterialSystem } from './material/MaterialSystem.js';
 // export { PhongMaterialSystem } from './material/PhongMaterialSystem.js';
@@ -30,7 +31,10 @@ export { TextureUtil } from './texture/TextureUtil.js';
 
 export { MeshRendererSystem } from './renderer/MeshRendererSystem.js';
 
-export { RenderSystem } from './render/RenderSystem.js';
+export * from "./scene/index.js";
+
+export * from "./render/index.js";
+// export { RenderSystem } from './render/RenderSystem.js';
 
 export { GLManager } from './webgl/GLManager.js';
 

@@ -60,6 +60,7 @@ export class TextureSystem extends System {
         const isWebGL2 = this.glManager.isWebGL2;
 
         textureState.texture = gl.createTexture();
+
         // GLUtil.bindTexture(glState, textureState);
 
         // textureState.formatDetail = TextureUtil._getFormatDetail(gl, texture.format, isWebGL2);
@@ -232,7 +233,7 @@ export class TextureSystem extends System {
         }
     }
 
-    generateMipmaps(texture, textureState) {
+    _generateMipmaps(texture, textureState) {
         if (!texture.mipmap) return;
         const gl = this.glManager.gl;
         const target = textureState.target;

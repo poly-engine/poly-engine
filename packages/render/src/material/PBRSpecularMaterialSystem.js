@@ -94,7 +94,7 @@ export class PBRSpecularMaterialSystem extends System {
         bpMaterial.specularGlossinessTextureRef = value;
 
         const shaderData = this.em.getComponent(entity, this.shaderDataCom);
-        const bpMaterialState = em.getComponent(entity, this.pbrMaterialStateCom);
+        const bpMaterialState = this.em.getComponent(entity, this.pbrMaterialStateCom);
         this._updateSpecularGlossinessTexture(bpMaterial, shaderData, bpMaterialState);
     }
     _updateSpecularGlossinessTexture(bpMaterial, shaderData, bpMaterialState) {

@@ -273,7 +273,9 @@ export class GLTFMeshParser extends GLTFParser {
       const gltfMesh = glTF.meshes[i];
       const primitivePromises = [];
 
-      for (let j = 0; j < gltfMesh.primitives.length; j++) {
+      if(gltfMesh.primitives.length > 1)
+        console.warn("gltfMesh.primitives.length > 1");
+      for (let j = 0; j < 1; j++) {
         const gltfPrimitive = gltfMesh.primitives[j];
 
         primitivePromises[j] = new Promise((resolve) => {

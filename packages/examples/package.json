@@ -28,6 +28,7 @@
     "@poly-engine/input": "workspace:*",
     "@poly-engine/render": "workspace:*",
     "@poly-engine/math": "workspace:*",
+    "@poly-engine/scene": "workspace:*",
     "@poly-engine/controls": "workspace:*"
   }
 }

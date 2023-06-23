@@ -19,7 +19,7 @@ export class Loader {
     this.request = request;
   }
 
-  load(item, resourceManager){
+  load(item, manager){
 
   }
 }

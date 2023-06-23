@@ -223,5 +223,46 @@ export class Util {
         return parts.join("/");
     }
 
-    
+    // /**
+    //  * @static
+    //  * @param {number[]} everyIds 
+    //  * @param {number[]} someIds 
+    //  * @param {number[]} notIds 
+    //  * @param {number[]} noneIds 
+    //  * @returns {number}
+    //  */
+    // static hashCode(everyIds, someIds, notIds, noneIds) {
+    //     let hash = 0;
+    //     if (everyIds) hash += everyIds.length;
+    //     if (someIds) hash += someIds.length;
+    //     if (notIds) hash += notIds.length;
+    //     if (noneIds) hash += noneIds.length;
+    //     everyIds?.sort(compareNumbers);
+    //     someIds?.sort(compareNumbers);
+    //     notIds?.sort(compareNumbers);
+    //     noneIds?.sort(compareNumbers);
+    //     // calculate hash.
+    //     everyIds?.forEach((value) => hash = hash * 13 + value);
+    //     someIds?.forEach((value) => hash = hash * 17 + value);
+    //     notIds?.forEach((value) => hash = hash * 23 + value);
+    //     noneIds?.forEach((value) => hash = hash * 31 + value);
+    //     return hash;
+    // }
+    static hashCodeOfStr(s) {
+        let h = 0, l = s.length, i = 0;
+        if (l > 0)
+            while (i < l){
+                h = (h << 5) - h + s.charCodeAt(i++) | 0;
+            }
+        return h;
+    }
+    static hashCodeOfNums(...s) {
+        let h = 0, l = s.length, i = 0;
+        if (l > 0)
+            while (i < l){
+                h = (h << 5) - h + (s[i] | 0);
+                i++;
+            }
+        return h;
+    }
 }

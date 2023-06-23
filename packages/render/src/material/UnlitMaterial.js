@@ -1,5 +1,4 @@
 import { CompMode, CompType } from "@poly-engine/core";
-import { BlendMode, RenderFace, RenderQueueType } from "../constants.js";
 
 export const UnlitMaterialDef = {
     type: CompType.Shared,

@@ -147,10 +147,13 @@ export class CompStore {
             return {};
         if (this.type === CompType.Buffered) {
             let buffer = comp;
+            if(buffer instanceof CompBuffer)
+                buffer = buffer.array;
             let array = [];
             for (let i = 0, l = buffer.length; i < l; i++) {
                 // let json = this._toJson(buffer.get(i), null, context);
-                let json = this._world.cloneManager.saveObjToJson(this.schema, buffer.get(i), context);
+                // let json = this._world.cloneManager.saveObjToJson(this.schema, buffer.get(i), context);
+                let json = this._world.cloneManager.saveObjToJson(this.schema, buffer[i], context);
                 array.push(json);
             }
             return array;

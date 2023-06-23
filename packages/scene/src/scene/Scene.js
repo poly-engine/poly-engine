@@ -22,3 +22,11 @@ export const SceneFlagDef = {
         entity: { type: 'entity', default: -1 }
     }
 };
+
+export const SceneChangedDef = {
+    mode: CompMode.Event,
+    schema: {
+        lastEnt: { type: 'entity', default: -1 },
+        curEnt: { type: 'entity', default: -1 }
+    }
+};

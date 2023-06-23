@@ -16,4 +16,11 @@ export class ArrayUtil {
         }
         return to;
     }
+
+    static fill(out, size, value = 0) {
+        out ??= [];
+        for (let i = 0; i < size; i++)
+            out[i] = value;
+        return out;
+    }
 }

@@ -1,7 +1,14 @@
-import { BlendFactor, BlendOperation, ColorWriteMask, CompareFunction, CullMode, RenderQueueType, StencilOperation } from "../constants.js";
+import { CompMode } from "@poly-engine/core";
+import { RenderQueueType } from "./enums/RenderQueueType";
+import { BlendOperation } from "./enums/BlendOperation";
+import { BlendFactor } from "./enums/BlendFactor";
+import { ColorWriteMask } from "./enums/ColorWriteMask";
+import { CompareFunction } from "./enums/CompareFunction";
+import { StencilOperation } from "./enums/StencilOperation";
+import { CullMode } from "./enums/CullMode";
 
 export const RenderStateDef = {
-    // mode: CompMode.State,
+    mode: CompMode.Flag,
     schema: {
         renderQueueType: { type: 'number', default: RenderQueueType.Opaque },
         blendState: {

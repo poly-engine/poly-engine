@@ -112,7 +112,7 @@ export class PhongBaseMaterialSystem extends System {
         bpMaterial.normalTextureRef = value;
 
         const shaderData = this.em.getComponent(entity, this.shaderDataCom);
-        const bpMaterialState = em.getComponent(entity, this.phongBaseMaterialStateCom);
+        const bpMaterialState = this.em.getComponent(entity, this.phongBaseMaterialStateCom);
         this._updateNormalTexture(bpMaterial, shaderData, bpMaterialState);
     }
     _updateNormalTexture(bpMaterial, shaderData, bpMaterialState) {
@@ -146,7 +146,7 @@ export class PhongBaseMaterialSystem extends System {
         bpMaterial.emissiveTextureRef = value;
 
         const shaderData = this.em.getComponent(entity, this.shaderDataCom);
-        const bpMaterialState = em.getComponent(entity, this.phongBaseMaterialStateCom);
+        const bpMaterialState = this.em.getComponent(entity, this.phongBaseMaterialStateCom);
         this._updateEmissiveTexture(bpMaterial, shaderData, bpMaterialState);
     }
     _updateEmissiveTexture(bpMaterial, shaderData, bpMaterialState) {

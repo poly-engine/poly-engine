@@ -1,3 +1,4 @@
+import { Util } from "../utils/Util.js";
 import { Archetype } from "./Archetype.js";
 
 /**
@@ -19,20 +20,25 @@ export class Query {
      * @returns {number}
      */
     static hashCode(everyIds, someIds, notIds, noneIds) {
-        let hash = 0;
-        if (everyIds) hash += everyIds.length;
-        if (someIds) hash += someIds.length;
-        if (notIds) hash += notIds.length;
-        if (noneIds) hash += noneIds.length;
+        // let hash = 0;
+        // if (everyIds) hash += everyIds.length;
+        // if (someIds) hash += someIds.length;
+        // if (notIds) hash += notIds.length;
+        // if (noneIds) hash += noneIds.length;
         everyIds?.sort(compareNumbers);
         someIds?.sort(compareNumbers);
         notIds?.sort(compareNumbers);
         noneIds?.sort(compareNumbers);
-        // calculate hash.
-        everyIds?.forEach((value) => hash = hash * 13 + value);
-        someIds?.forEach((value) => hash = hash * 17 + value);
-        notIds?.forEach((value) => hash = hash * 23 + value);
-        noneIds?.forEach((value) => hash = hash * 31 + value);
+        // // calculate hash.
+        // everyIds?.forEach((value) => hash = hash * 13 + value);
+        // someIds?.forEach((value) => hash = hash * 17 + value);
+        // notIds?.forEach((value) => hash = hash * 23 + value);
+        // noneIds?.forEach((value) => hash = hash * 31 + value);
+        const h0 = everyIds ? Util.hashCodeOfNums(...everyIds) : 0;
+        const h1 = someIds ? Util.hashCodeOfNums(...someIds) : 0;
+        const h2 = notIds ? Util.hashCodeOfNums(...notIds) : 0;
+        const h3 = noneIds ? Util.hashCodeOfNums(...noneIds) : 0;
+        let hash = Util.hashCodeOfNums(h0, h1, h2, h3);
         return hash;
     }
     /**

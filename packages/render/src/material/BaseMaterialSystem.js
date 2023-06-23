@@ -99,7 +99,7 @@ export class BaseMaterialSystem extends System {
         baseMaterial.baseTextureRef = value;
 
         const shaderData = this.em.getComponent(entity, this.shaderDataCom);
-        const unlitMaterialState = em.getComponent(entity, this.baseMaterialStateCom);
+        const unlitMaterialState = this.em.getComponent(entity, this.baseMaterialStateCom);
         this._updateBaseTexture(baseMaterial, shaderData, unlitMaterialState);
     }
     _updateBaseTexture(baseMaterial, shaderData, unlitMaterialState) {

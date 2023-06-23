@@ -78,13 +78,13 @@ export class ShaderUtil {
                     func = isArray ? upload1fv : upload1f;
                     break;
                 case gl.FLOAT_VEC2:
-                    func = upload2fv;
+                    func = isArray ? upload2fv : upload2f;
                     break;
                 case gl.FLOAT_VEC3:
-                    func = upload3fv;
+                    func = isArray ? upload3fv : upload3f;
                     break;
                 case gl.FLOAT_VEC4:
-                    func = upload4fv;
+                    func = isArray ? upload4fv : upload4f;
                     break;
                 case gl.BOOL:
                 case gl.INT:
@@ -92,15 +92,15 @@ export class ShaderUtil {
                     break;
                 case gl.BOOL_VEC2:
                 case gl.INT_VEC2:
-                    func = upload2iv;
+                    func = isArray ? upload2iv : upload2i;
                     break;
                 case gl.BOOL_VEC3:
                 case gl.INT_VEC3:
-                    func = upload3iv;
+                    func = isArray ? upload3iv : upload3i;
                     break;
                 case gl.BOOL_VEC4:
                 case gl.INT_VEC4:
-                    func = upload4iv;
+                    func = isArray ? upload4iv : upload4i;
                     break;
                 case gl.FLOAT_MAT4:
                     func = uploadMat4v;
@@ -229,11 +229,20 @@ function upload1f(gl, shaderUniform, value) {
 function upload1fv(gl, shaderUniform, value) {
     gl.uniform1fv(shaderUniform.location, value);
 }
+function upload2f(gl, shaderUniform, value) {
+    gl.uniform2f(shaderUniform.location, value[0], value[1]);
+}
 function upload2fv(gl, shaderUniform, value) {
     gl.uniform2fv(shaderUniform.location, value);
 }
+function upload3f(gl, shaderUniform, value) {
+    gl.uniform3f(shaderUniform.location, value[0], value[1], value[2]);
+}
 function upload3fv(gl, shaderUniform, value) {
     gl.uniform3fv(shaderUniform.location, value);
+}
+function upload4f(gl, shaderUniform, value) {
+    gl.uniform4f(shaderUniform.location, value[0], value[1], value[2], value[3]);
 }
 function upload4fv(gl, shaderUniform, value) {
     gl.uniform4fv(shaderUniform.location, value);
@@ -244,11 +253,20 @@ function upload1i(gl, shaderUniform, value) {
 function upload1iv(gl, shaderUniform, value) {
     gl.uniform1iv(shaderUniform.location, value);
 }
+function upload2i(gl, shaderUniform, value) {
+    gl.uniform2i(shaderUniform.location, value[0], value[1]);
+}
 function upload2iv(gl, shaderUniform, value) {
     gl.uniform2iv(shaderUniform.location, value);
 }
+function upload3i(gl, shaderUniform, value) {
+    gl.uniform3i(shaderUniform.location, value[0], value[1], value[2]);
+}
 function upload3iv(gl, shaderUniform, value) {
     gl.uniform3iv(shaderUniform.location, value);
+}
+function upload4i(gl, shaderUniform, value) {
+    gl.uniform4i(shaderUniform.location, value[0], value[1], value[2], value[3]);
 }
 function upload4iv(gl, shaderUniform, value) {
     gl.uniform4iv(shaderUniform.location, value);

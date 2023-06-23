@@ -1,5 +1,6 @@
 import { CompMode, CompType } from "@poly-engine/core"
-import { Spherical } from "./Spherical";
+import { ControlHandlerType } from "./ControlHandlerType.js";
+import { Spherical } from "./Spherical.js";
 
 
 export const OrbitControlDef = {
@@ -31,6 +32,7 @@ export const OrbitControlDef = {
         up: { type: 'vec3', default: [0, 1, 0] },
         target: { type: 'vec3', default: [0, 0, 0] },
 
+        enableHandler: { type: 'number', default: ControlHandlerType.All },
     }
 };
 
@@ -39,13 +41,21 @@ export const OrbitControlStateDef = {
     schema: {
         atTheBack: { type: 'boolean', default: false },
 
-        spherical: { type: 'object', default: () => new Spherical() },
-        sphericalDelta: { type: 'object', default: () => new Spherical() },
-        sphericalDump: { type: 'object', default: () => new Spherical() },
+        spherical: { type: 'object', default: (prop) => prop ? prop.clear() : new Spherical() },
+        // sphericalDelta: { type: 'object', default: (prop) => prop ? prop.clear() : new Spherical() },
+        sphericalDump: { type: 'object', default: (prop) => prop ? prop.clear() : new Spherical() },
+        // spherical: { type: 'class', default: null, cons: Spherical },
 
-        _zoomFrag: { type: 'number', default: 0 },
-        _scale: { type: 'number', default: 0 },
-        _panOffset: { type: 'vec3', default: [0, 0, 0] },
+        startX: { type: 'number', default: 0 },
+        startY: { type: 'number', default: 0 },
+        startPanX: { type: 'number', default: 0 },
+        startPanY: { type: 'number', default: 0 },
+        // isDown: { type: 'boolean', default: false },
+        state: { type: 'number', default: -1 },
+
+        // zoomFrag: { type: 'number', default: 0 },
+        // scale: { type: 'number', default: 0 },
+        // panOffset: { type: 'vec3', default: [0, 0, 0] },
     }
 };
 

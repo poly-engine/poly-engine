@@ -1,6 +1,7 @@
-import { CameraClearFlags, VertexElementType } from "../constants";
+import { CameraClearFlags } from "../camera/enums/CameraClearFlags";
+import { VertexElementType } from "../constants";
 import { BufferUsage } from "../geometry/BufferUsage";
-import { IndexFormat } from "../geometry/IndexFormat";
+
 
 export class GLUtil {
     // static requireExtension(glState, ext) {
@@ -98,4 +99,6 @@ export class GLUtil {
     //     }
     // }
     //#endregion
+
+
 }

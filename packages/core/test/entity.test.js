@@ -49,7 +49,7 @@ describe('entity', () => {
             {
                 com_2: [{ str: '3' }],
                 com_4: { id: 'uuid_1', array: [1, 2, 3] },
-                com_5: { },
+                com_5: {},
             }
         ];
         let ents = entityManager.entitiesFromJson(json);
@@ -75,6 +75,45 @@ describe('entity', () => {
         expect(prefab1).toEqual(json);
 
     });
+    it('copy data', () => {
+        const e = entityManager.createEntity();
+        let prefabData = [
+            {
+                com_1: { value: 1, entity: 1 }
+            },
+            {
+                com_1: { value: 2, entity: 2 },
+                com_2: [{ str: '1' }, { str: '2' }],
+            },
+            {
+                com_1: { value: 3 },
+                com_2: [{ str: '3' }],
+            }
+        ];
+        let sceneData = [
+            {
+                com_5: {},
+            },
+            {
+                com_5: {},
+            },
+            {
+                com_5: {},
+            }
+        ];
+
+        let toEnts = entityManager.copyEntityDatas(null, prefabData, sceneData);
+        // console.log(JSON.stringify(sceneData));
+        expect(toEnts).toEqual([3, 4, 5]);
+
+        const prefabData1 = [];
+        toEnts = entityManager.copyEntityDatas(toEnts, sceneData, prefabData1);
+        expect(toEnts).toEqual([0, 1, 2]);
+
+        expect(prefabData1).toEqual(prefabData);
+
+    });
+
     it('prefab', () => {
         const e = entityManager.createEntity();
         let json = {
@@ -119,91 +158,3 @@ describe('entity', () => {
         // console.log(JSON.stringify(prefab2));
     });
 });
-// function createPrefab(entities) {
-//     let ents = [];
-//     let stores = [];
-//     let comps = [];
-//     // let entSet = new SparseSet();
-//     let compStores = [];
-//     let compStoreSet = new SparseSet();
-//     let sharedRefs = [];
-//     let ent = 0;
-//     for (let i = 0, l = entities.length; i < l; i++) {
-//         let entity = entities[i];
-//         // entSet.add(ent);
-//         let entComps = [];
-//         let archetype = world.getEntityArchetype(entity);
-//         if (archetype.compIds.length === 0)
-//             continue;
-//         archetype.compIds.forEach((compId) => {
-//             let compStore = world.getCompStore(compId);
-//             let has = compStoreSet.has(compId);
-//             compStoreSet.add(compId);
-//             let index = compStoreSet.indexOf(compId);
-//             entComps.push(index);
-//             if (!has) {
-//                 comps[index] = [];
-//                 compStores[index] = compStore;
-//                 sharedRefs[index] = {};
-//             }
-//             let compDatas = comps[index];
-//             let sharedRef = sharedRefs[index];
-//             let dataIndex = compDatas.length;
-//             if(!compStore.isTag){
-//                 let comp = compStore.get(entity);
-//                 // compDatas.push(compStore.toJson(comp));
-//                 // comps[index][ent] = compStore.toJson(comp);
-//                 if(compStore.type === ComponentType.Shared){
-//                     let refIndex = sharedRef[comp.id];
-//                     if(refIndex === undefined){
-//                         refIndex = compDatas.length;
-//                         compDatas.push(compStore.toJson(comp));
-//                         sharedRef[comp.id] = refIndex;
-//                     }
-//                     dataIndex = refIndex;
-//                 }
-//                 else
-//                     compDatas.push(compStore.toJson(comp));
-//             }
-//             entComps.push(dataIndex);
-//         });
-//         ents.push(entComps);
-//         ent++;
-//     }
-//     stores = compStores.map((store) => store.name);
-//     return { stores, ents, comps };
-// }
-// function createEntities(prefab) {
-//     let ents = prefab.ents;
-//     let stores = prefab.stores;
-//     let comps = prefab.comps;
-//     let entMap = ents.map((ent) => world.createEntity());
-//     let compStoreMap = stores.map((compName) => world.getCompStore(compName));
-//     let context = { entMap: entMap };
-
-//     for (let i = 0, l = ents.length; i < l; i++) {
-//         let ent = entMap[i];
-//         // ents[i].forEach((cid) => {
-//         //     let compStore = compStoreMap[cid];
-//         //     if (compStore.isTag)
-//         //         world.setComponent(ent, compStore);
-//         //     else {
-//         //         let comp = compStore.fromJson(comps[cid][i], context);
-//         //         world.setComponent(ent, compStore, comp);
-//         //     }
-//         // });
-//         let entComps = ents[i];
-//         for(let j = 0, jl = entComps.length;j<jl;j++){
-//             let cid = entComps[j];
-//             let cindex = entComps[++j];
-//             let compStore = compStoreMap[cid];
-//             if (compStore.isTag)
-//                 world.setComponent(ent, compStore);
-//             else {
-//                 let comp = compStore.fromJson(comps[cid][cindex], context);
-//                 world.setComponent(ent, compStore, comp);
-//             }
-//         }
-//     }
-//     return entMap;
-// }

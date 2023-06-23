@@ -17,6 +17,7 @@ export class SceneManager {
         this.sceneCom = this.em.getComponentId("Scene");
         this.sceneStateCom = this.em.getComponentId("SceneState");
         this.sceneFlagCom = this.em.getComponentId("SceneFlag");
+        this.sceneChangedCom = this.em.getComponentId("SceneChanged");
 
         this.transformCom = this.em.getComponentId("Transform");
 
@@ -38,7 +39,7 @@ export class SceneManager {
 
     setActiveScene(idOrEnt) {
         const sceneEnt = this.getSceneEntity(idOrEnt);
-        if(sceneEnt === -1)
+        if (sceneEnt === -1)
             return;
         const scene = this.em.getComponent(sceneEnt, this.sceneCom);
         this.activeId = scene.id;
@@ -49,7 +50,7 @@ export class SceneManager {
         const em = this.em;
 
         let sceneEnt = this.getSceneEntity(id);
-        if(sceneEnt !== -1)
+        if (sceneEnt !== -1)
             return -1;
         sceneEnt = em.createEntity();
         em.setComponentByArgs(sceneEnt, this.sceneCom, id, template);
@@ -88,9 +89,9 @@ export class SceneManager {
 
     unloadSceneEntity(id) {
         const scneEnt = this.getSceneEntity(id);
-        if(scneEnt === -1)
+        if (scneEnt === -1)
             return;
-        
+
     }
 
     unloadAllSceneEntities() {
@@ -121,13 +122,24 @@ export class SceneManager {
             return false;
         const rootEnt = entity;//this.tm.getRootEntity(entity);
         const sceneState = this.em.getComponent(sceneEnt, this.sceneStateCom);
-        if(sceneState == null)
-            return false;
-        const entSet = sceneState.entSet;
-        if (entSet.has(rootEnt))
-            return false;
-        entSet.add(rootEnt);
+        if (sceneState != null) {
+            const entSet = sceneState.entSet;
+            if (entSet.has(rootEnt))
+                return false;
+            entSet.add(rootEnt);
+        }
+        // if(sceneState == null)
+        //     return false;
+        // const entSet = sceneState.entSet;
+        // if (entSet.has(rootEnt))
+        //     return false;
+        // entSet.add(rootEnt);
         let flag = this.em.setComponentByArgs(rootEnt, this.sceneFlagCom, sceneEnt);
+        let changed = this.em.getComponent(rootEnt, this.sceneChangedCom);
+        if(changed)
+            changed.curEnt = sceneEnt;
+        else
+            this.em.setComponentByArgs(rootEnt, this.sceneChangedCom, -1, sceneEnt);
         return true;
     }
     removeEntityFromScene(entity, id) {
@@ -136,13 +148,20 @@ export class SceneManager {
             return false;
         const rootEnt = entity;//this.tm.getRootEntity(entity);
         const sceneState = this.em.getComponent(sceneEnt, this.sceneStateCom);
-        if(sceneState == null)
+        if (sceneState == null)
             return false;
         const entSet = sceneState.entSet;
         if (!entSet.has(rootEnt))
             return false;
         entSet.remove(rootEnt);
         this.em.removeComponent(rootEnt, this.sceneFlagCom);
+
+        let changed = this.em.getComponent(rootEnt, this.sceneChangedCom);
+        if(changed)
+            changed.curEnt = -1;
+        else
+            this.em.setComponentByArgs(rootEnt, this.sceneChangedCom, sceneEnt, -1);
+
         return true;
     }
     //#endregion

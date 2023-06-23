@@ -836,6 +836,7 @@ export const forEach = (function () {
  * @param {vec3} out - The transformed normal
  * @param {vec3} a - The normal vector to transform
  * @param {mat4} m - The transform matrix
+ * @returns {vec3}
  */
 export function transformNormal(out, a, m) {
   let x = a[0];
@@ -845,5 +846,32 @@ export function transformNormal(out, a, m) {
   out[0] = m[0] * x + m[4] * y + m[8] * z;
   out[1] = m[1] * x + m[5] * y + m[9] * z;
   out[2] = m[2] * x + m[6] * y + m[10] * z;
+  return out;
+}
+
+/**
+ * Performs a coordinate transformation using the given 4x4 matrix.
+ *
+ * @remarks
+ * A coordinate transform performs the transformation with the assumption that the w component
+ * is one. The four dimensional vector obtained from the transformation operation has each
+ * component in the vector divided by the w component. This forces the w-component to be one and
+ * therefore makes the vector homogeneous. The homogeneous vector is often preferred when working
+ * with coordinates as the w component can safely be ignored.
+ * @param {vec3} out - The transformed coordinates
+ * @param {vec3} v - The coordinate vector to transform
+ * @param {mat4} m - The transform matrix
+ * @returns {vec3}
+ */
+export function transformCoordinate(out, v, m) {
+  let _x = v[0];
+  let _y = v[1];
+  let _z = v[2];
+  let w = _x * m[3] + _y * m[7] + _z * m[11] + m[15];
+  w = 1.0 / w;
+
+  out[0] = (_x * m[0] + _y * m[4] + _z * m[8] + m[12]) * w;
+  out[1] = (_x * m[1] + _y * m[5] + _z * m[9] + m[13]) * w;
+  out[2] = (_x * m[2] + _y * m[6] + _z * m[10] + m[14]) * w;
   return out;
 }

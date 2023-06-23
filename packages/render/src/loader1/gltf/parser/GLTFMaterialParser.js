@@ -1,8 +1,8 @@
 
 import { AssetPromise } from "@poly-engine/asset";
-import { RenderFace } from "../../../constants.js";
+import { RenderFace } from "../../../material/enums/RenderFace.js";
 import { MaterialSystem } from "../../../material/MaterialSystem.js";
-import { TextureCoordinate } from "../../../material/TextureCoordinate.js";
+import { TextureCoordinate } from "../../../material/enums/TextureCoordinate.js";
 import { ColorUtil } from "../../../utils/ColorUtil.js";
 import { MaterialAlphaMode } from "../GLTFSchema.js";
 import { GLTFParser } from "./GLTFParser.js";
@@ -50,7 +50,8 @@ export class GLTFMaterialParser extends GLTFParser {
         ];
       }
       if (baseColorTexture) {
-        material.BaseMaterial.baseTexture = textures[baseColorTexture.index];
+        // material.BaseMaterial.baseTexture = textures[baseColorTexture.index];
+        material.BaseMaterial.baseTextureRef = textures[baseColorTexture.index].Asset.id;
         GLTFParser.executeExtensionsAdditiveAndParse(baseColorTexture.extensions, context, material, baseColorTexture);
       }
 
@@ -58,7 +59,7 @@ export class GLTFMaterialParser extends GLTFParser {
         material.PBRMaterial.metallic = metallicFactor ?? 1;
         material.PBRMaterial.roughness = roughnessFactor ?? 1;
         if (metallicRoughnessTexture) {
-          material.PBRMaterial.roughnessMetallicTextureRef = textures[metallicRoughnessTexture.index];
+          material.PBRMaterial.roughnessMetallicTextureRef = textures[metallicRoughnessTexture.index].Asset.id;
           GLTFMaterialParser._checkOtherTextureTransform(metallicRoughnessTexture, "Roughness metallic");
         }
       }
@@ -66,7 +67,7 @@ export class GLTFMaterialParser extends GLTFParser {
 
     if (material.PhongBaseMaterial != null) {
       if (emissiveTexture) {
-        material.PhongBaseMaterial.emissiveTextureRef = textures[emissiveTexture.index];
+        material.PhongBaseMaterial.emissiveTextureRef = textures[emissiveTexture.index].Asset.id;
         GLTFMaterialParser._checkOtherTextureTransform(emissiveTexture, "Emissive");
       }
 
@@ -81,7 +82,7 @@ export class GLTFMaterialParser extends GLTFParser {
 
       if (normalTexture) {
         const { index, scale } = normalTexture;
-        material.PhongBaseMaterial.normalTextureRef = textures[index];
+        material.PhongBaseMaterial.normalTextureRef = textures[index].Asset.id;
         GLTFMaterialParser._checkOtherTextureTransform(normalTexture, "Normal");
 
         if (scale !== undefined) {
@@ -92,7 +93,7 @@ export class GLTFMaterialParser extends GLTFParser {
     if (material.PBRBaseMaterial != null) {
       if (occlusionTexture) {
         const { index, strength, texCoord } = occlusionTexture;
-        material.PBRBaseMaterial.occlusionTextureRef = textures[index];
+        material.PBRBaseMaterial.occlusionTextureRef = textures[index].Asset.id;
         GLTFMaterialParser._checkOtherTextureTransform(occlusionTexture, "Occlusion");
 
         if (strength !== undefined) {
@@ -143,6 +144,7 @@ export class GLTFMaterialParser extends GLTFParser {
 
       if (!material) {
         material = materialSys.createPBRMaterialData();//new PBRMaterial(engine);
+        // material = materialSys.createPhongMaterialData();//new PBRMaterial(engine);
         material.Asset.name = materialInfo.name;
         GLTFMaterialParser._parseStandardProperty(context, material, materialInfo);
       }

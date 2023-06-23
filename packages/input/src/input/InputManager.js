@@ -88,7 +88,7 @@ export class InputManager {
     // }
 
     createActionEntity(json){
-        return this.em.createEntityByJson(json);
+        return this.em.entityFromJson(json);
     }
 
     hasActionValue(actionId) {

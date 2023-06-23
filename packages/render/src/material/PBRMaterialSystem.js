@@ -105,7 +105,7 @@ export class PBRMaterialSystem extends System {
         bpMaterial.roughnessMetallicTextureRef = value;
 
         const shaderData = this.em.getComponent(entity, this.shaderDataCom);
-        const bpMaterialState = em.getComponent(entity, this.pbrMaterialStateCom);
+        const bpMaterialState = this.em.getComponent(entity, this.pbrMaterialStateCom);
         this._updateRoughnessMetallicTexture(bpMaterial, shaderData, bpMaterialState);
     }
     _updateRoughnessMetallicTexture(bpMaterial, shaderData, bpMaterialState) {

@@ -20,6 +20,8 @@ export class SceneSystem extends System {
 
         this.que_releaseFlag = this.qm.createQuery({ all: [this.sceneFlagCom], not: [this.transformCom] });
         this.que_parentDirty = this.qm.createQuery({ all: [this.parentDirtyCom] });
+
+        this.que_sceneFlag = this.qm.createQuery({ all: [this.transformCom, this.sceneFlagCom] });
     }
     init() {
     }
@@ -96,6 +98,13 @@ export class SceneSystem extends System {
                 }
             });
         }
+
+        this.que_sceneFlag.forEach(entity => {
+            const sceneFlag = em.getComponent(entity, this.sceneFlagCom);
+            if (sceneFlag.entity !== sceneEnt)
+                return;
+            sceneState.entSet.add(entity);
+        });
     }
     _releaseState(sceneEnt, sceneState) {
         const em = this.em;

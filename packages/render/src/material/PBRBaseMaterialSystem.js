@@ -102,7 +102,7 @@ export class PBRBaseMaterialSystem extends System {
         bpMaterial.occlusionTextureRef = value;
 
         const shaderData = this.em.getComponent(entity, this.shaderDataCom);
-        const bpMaterialState = em.getComponent(entity, this.pbrBaseMaterialStateCom);
+        const bpMaterialState = this.em.getComponent(entity, this.pbrBaseMaterialStateCom);
         this._updateOcclusionTexture(bpMaterial, shaderData, bpMaterialState);
     }
     _updateOcclusionTexture(bpMaterial, shaderData, bpMaterialState) {
@@ -153,7 +153,7 @@ export class PBRBaseMaterialSystem extends System {
         bpMaterial.clearCoatTextureRef = value;
 
         const shaderData = this.em.getComponent(entity, this.shaderDataCom);
-        const bpMaterialState = em.getComponent(entity, this.pbrBaseMaterialStateCom);
+        const bpMaterialState = this.em.getComponent(entity, this.pbrBaseMaterialStateCom);
         this._updateClearCoatTexture(bpMaterial, shaderData, bpMaterialState);
     }
     _updateClearCoatTexture(bpMaterial, shaderData, bpMaterialState) {
@@ -186,7 +186,7 @@ export class PBRBaseMaterialSystem extends System {
         bpMaterial.clearCoatRoughnessTextureRef = value;
 
         const shaderData = this.em.getComponent(entity, this.shaderDataCom);
-        const bpMaterialState = em.getComponent(entity, this.pbrBaseMaterialStateCom);
+        const bpMaterialState = this.em.getComponent(entity, this.pbrBaseMaterialStateCom);
         this._updateClearCoatRoughnessTexture(bpMaterial, shaderData, bpMaterialState);
     }
     _updateClearCoatRoughnessTexture(bpMaterial, shaderData, bpMaterialState) {
@@ -208,16 +208,16 @@ export class PBRBaseMaterialSystem extends System {
         bpMaterial.clearCoatNormalTextureRef = value;
 
         const shaderData = this.em.getComponent(entity, this.shaderDataCom);
-        const bpMaterialState = em.getComponent(entity, this.pbrBaseMaterialStateCom);
+        const bpMaterialState = this.em.getComponent(entity, this.pbrBaseMaterialStateCom);
         this._updateClearCoatNormalTexture(bpMaterial, shaderData, bpMaterialState);
     }
     _updateClearCoatNormalTexture(bpMaterial, shaderData, bpMaterialState) {
         let ent = bpMaterialState.clearCoatNormalTextureEnt;
         if (ent !== -1)
             this.assetSystem.unloadAssetEntity(ent);
-        ent = bpMaterialState.clearCoatNormalTextureEnt = this.assetSystem.loadAssetEntity(bpMaterial.clearCoatRoughnessTextureRef);
+        ent = bpMaterialState.clearCoatNormalTextureEnt = this.assetSystem.loadAssetEntity(bpMaterial.clearCoatNormalTextureRef);
 
-        this.shaderSystem.setPropertyValue(shaderData, this.clearCoatNormalTextureRef, ent);
+        this.shaderSystem.setPropertyValue(shaderData, this._clearCoatNormalTextureProp, ent);
         if (ent === -1) {
             this.shaderSystem.disableMacro(shaderData, this._clearCoatNormalTextureMacro);
         } else
