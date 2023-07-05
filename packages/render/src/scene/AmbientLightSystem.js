@@ -1,5 +1,5 @@
 import { System, SystemGroupType } from "@poly-engine/core";
-import { sh3 } from "@poly-engine/math";
+import { sh3, vec4 } from "@poly-engine/math";
 import { DiffuseMode } from "./DiffuseMode.js";
 
 export class AmbientLightSystem extends System {

@@ -1,6 +1,6 @@
 {
   "name": "@poly-engine/controls",
-  "version": "0.1.0-beta.3",
+  "version": "0.2.0-beta.1",
   "description": "PolyEngine controls module",
   "main": "dist/main.js",
   "module": "dist/module.js",

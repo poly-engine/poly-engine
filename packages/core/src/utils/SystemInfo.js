@@ -5,13 +5,22 @@ import { Platform } from "./Platform.js";
  * @class SystemInfo
  */
 export class SystemInfo {
-  /** The platform is running on. */
+  /** 
+   * The platform is running on. 
+   * @type {number}
+   * @static
+   */
   static platform = Platform.Unknown;
-  /** The operating system is running on. */
+  /** 
+   * The operating system is running on. 
+   * @type {string}
+   * @static
+   */
   static operatingSystem = "";
 
   /**
    * The pixel ratio of the device.
+   * @type {number}
    */
   static get devicePixelRatio() {
     return window.devicePixelRatio;

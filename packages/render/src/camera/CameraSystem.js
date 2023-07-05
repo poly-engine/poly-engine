@@ -67,6 +67,8 @@ export class CameraSystem extends System {
                 let cameraState = em.getComponent(entity, com_cameraState);
                 cameraState.viewportWidth = this.htmlManager.width;
                 cameraState.viewportHeight = this.htmlManager.height;
+                if (camera.aspectRatio === 0)
+                    cameraState.aspectRatio = (cameraState.viewportWidth * camera.viewport[2]) / (cameraState.viewportHeight * camera.viewport[3])
                 this.updateProjection(camera, cameraState);
                 this._updatePV(cameraState, ltw);
             });

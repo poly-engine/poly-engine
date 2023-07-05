@@ -1,0 +1,67 @@
+name: Deploy examples and docs to Pages
+
+on:
+  push:
+    branches: ['main']
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 'Build job'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: 'pnpm'
+      - name: Install Packages
+        run: pnpm install
+      - name: Build Core
+        run: npm run build --prefix packages/core
+      - name: Build Math
+        run: npm run build --prefix packages/math
+      - name: Build Asset
+        run: npm run build --prefix packages/asset
+      - name: Build Input
+        run: npm run build --prefix packages/input
+      - name: Build Transform
+        run: npm run build --prefix packages/transform
+      - name: Build Scene
+        run: npm run build --prefix packages/scene
+      - name: Build Render
+        run: npm run build --prefix packages/render
+      - name: Build Controls
+        run: npm run build --prefix packages/controls
+      - name: Build Examples
+        run: npm run build --prefix packages/examples
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: '.'
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1

@@ -6,6 +6,7 @@ import { TextureCoordinate } from "../../../material/enums/TextureCoordinate.js"
 import { ColorUtil } from "../../../utils/ColorUtil.js";
 import { MaterialAlphaMode } from "../GLTFSchema.js";
 import { GLTFParser } from "./GLTFParser.js";
+import { Logger } from "@poly-engine/core";
 
 export class GLTFMaterialParser extends GLTFParser {
   /**

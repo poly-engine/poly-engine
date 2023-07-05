@@ -12,22 +12,26 @@ export class AssetManager {
         this._assetDataMap = new Map;
         this._assetDataMaps = [];
 
-        this._loaderMap = new Map;
+        // this._loaderMap = new Map;
+        // /** The number of retries after failing to load assets. 
+        //  * @type {number}
+        // */
+        // this.retryCount = 1;
+        // /** Retry delay time after failed to load assets, in milliseconds. 
+        //  * @type {number}
+        // */
+        // this.retryInterval = 0;
+        // /** The default timeout period for loading assets, in milliseconds. 
+        //  * @type {number}
+        // */
+        // this.timeout = Infinity;
 
-
-        /** The number of retries after failing to load assets. */
-        this.retryCount = 1;
-        /** Retry delay time after failed to load assets, in milliseconds. */
-        this.retryInterval = 0;
-        /** The default timeout period for loading assets, in milliseconds. */
-        this.timeout = Infinity;
-
-        this._loadingPromises = {};
-        this._assetPool = Object.create(null);
-        this._assetUrlPool = Object.create(null);
-        this._referResourcePool = Object.create(null);
-        this._graphicResourcePool = Object.create(null);
-        this._contentRestorerPool = Object.create(null);
+        // this._loadingPromises = {};
+        // this._assetPool = Object.create(null);
+        // this._assetUrlPool = Object.create(null);
+        // this._referResourcePool = Object.create(null);
+        // this._graphicResourcePool = Object.create(null);
+        // this._contentRestorerPool = Object.create(null);
     }
 
     //#region asset data

@@ -15,19 +15,25 @@ export class LoadManager {
         this._extTypeMapping = {};
 
 
-        /** The number of retries after failing to load assets. */
+        /** The number of retries after failing to load assets. 
+         * @type {number}
+        */
         this.retryCount = 1;
-        /** Retry delay time after failed to load assets, in milliseconds. */
+        /** Retry delay time after failed to load assets, in milliseconds. 
+         * @type {number}
+        */
         this.retryInterval = 0;
-        /** The default timeout period for loading assets, in milliseconds. */
+        /** The default timeout period for loading assets, in milliseconds. 
+         * @type {number}
+        */
         this.timeout = Infinity;
 
         this._loadingPromises = {};
-        this._assetPool = Object.create(null);
+        // this._assetPool = Object.create(null);
         this._assetUrlPool = Object.create(null);
-        this._referResourcePool = Object.create(null);
-        this._graphicResourcePool = Object.create(null);
-        this._contentRestorerPool = Object.create(null);
+        // this._referResourcePool = Object.create(null);
+        // this._graphicResourcePool = Object.create(null);
+        // this._contentRestorerPool = Object.create(null);
     }
     //#region loader
     addLoader(type, loader, extNames) {

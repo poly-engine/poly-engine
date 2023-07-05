@@ -11,10 +11,16 @@ export class TimeManager {
   _actualElapsedTime = 0;
   _lastSystemTime;
 
-  /** Maximum delta time allowed per frame in seconds. */
+  /**
+   *  Maximum delta time allowed per frame in seconds. 
+   * @type {number}
+  */
   maximumDeltaTime = 0.333333;
 
-  /** The scale of time. */
+  /**
+   * The scale of time. 
+   * @type {number}
+  */
   timeScale = 1.0;
 
   get frameCount() {

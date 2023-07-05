@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>poly - common</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: monospace;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #b {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      text-align: center;
+      z-index: 2;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="c"></canvas>
+</body>
+
+<script type="importmap">
+  {
+    "imports": {
+      "@poly-engine/core": "../node_modules/@poly-engine/core/dist/module.js",
+      "@poly-engine/math": "../node_modules/@poly-engine/math/dist/module.js",
+      "@poly-engine/transform": "../node_modules/@poly-engine/transform/dist/module.js",
+      "@poly-engine/asset": "../node_modules/@poly-engine/asset/dist/module.js",
+      "@poly-engine/input": "../node_modules/@poly-engine/input/dist/module.js",
+      "@poly-engine/scene": "../node_modules/@poly-engine/scene/dist/module.js",
+      "@poly-engine/render": "../node_modules/@poly-engine/render/dist/module.js",
+      "@poly-engine/controls": "../node_modules/@poly-engine/controls/dist/module.js"
+    }
+  }
+</script>
+<script type="module">
+  import { World, System, SystemGroupType, BaseModule, HtmlBaseModule } from "@poly-engine/core";
+  import { TransformModule } from "@poly-engine/transform";
+  import { AssetModule } from "@poly-engine/asset";
+  import { InputModule, InputDeviceType, MouseControl, Keys, InputControlType, InputButtonState } from "@poly-engine/input";
+  import { RenderModule, VertexElementType, GeometryUtil, MeshTopology, TextureUtil, RenderQueueType, Texture2DLoader, FogMode } from '@poly-engine/render';
+  import { ControlsModule } from "@poly-engine/controls";
+  import { SceneModule } from "@poly-engine/scene";
+
+  import { quat, vec3 } from "@poly-engine/math";
+  import * as dat from "./libs/dat.gui.module.js";
+
+  class RotateSystem extends System {
+    constructor(world) {
+      super(world);
+      this.groupId = SystemGroupType.Update;
+      this.index = 200;
+
+      this.com_mesh = this.em.getComponentId('MeshRenderer');
+      this.com_transform = this.em.getComponentId('Transform');
+      this.com_transformDirty = this.em.getComponentId('TransformDirty');
+      this.que_meshTransform = this.qm.createQuery({
+        all: [this.com_transform, this.com_mesh],
+      });
+    }
+    init() {
+    }
+    _update(delta) {
+      let angle = 0;
+      angle = delta * 0.1;
+      this.que_meshTransform.forEach(entity => {
+        let transform = this.em.getComponent(entity, com_transform);
+        quat.rotateY(transform.rotation, transform.rotation, angle);
+        this.defer(() => {
+          this.em.setComponent(entity, this.com_transformDirty);
+        });
+      });
+    }
+  }
+
+  const canvasElement = document.querySelector("#c");
+  const world = new World();
+  world.moduleManager.addModule(new HtmlBaseModule(world, canvasElement));
+  world.moduleManager.addModule(AssetModule);
+  world.moduleManager.addModule(TransformModule);
+  world.moduleManager.addModule(SceneModule);
+  world.moduleManager.addModule(RenderModule);
+  world.moduleManager.addModule(InputModule);
+  world.moduleManager.addModule(ControlsModule);
+  const rotateSystem = world.systemManager.addSystem(RotateSystem, true);
+
+  const em = world.entityManager;
+  const lm = world.loadManager;
+  const transformManager = world.transformManager;
+  const assetManager = world.assetManager;
+  const sceneManager = world.sceneManager;
+  const sceneFogSys = world.systemManager.getSystem("SceneFogSystem");
+
+  const com_transform = em.getComponentId('Transform');
+  const com_camera = em.getComponentId('Camera');
+  // const com_shader = em.getComponentId('Shader');
+  // const materialCom = em.getComponentId('Material');
+  // const baseMaterialCom = em.getComponentId('BaseMaterial');
+  // const unlitMaterialCom = em.getComponentId('UnlitMaterial');
+  // const phongBaseMaterialCom = em.getComponentId('PhongBaseMaterial');
+  // const phongMaterialCom = em.getComponentId('PhongMaterial');
+  // const com_texture = em.getComponentId('Texture');
+  // const boxGeometryCom = em.getComponentId('BoxGeometry');
+  // const sphereGeometryCom = em.getComponentId('SphereGeometry');
+  // const com_geometry = em.getComponentId('Geometry');
+  // const com_geometryState = em.getComponentId('GeometryState');
+  // const meshRendererCom = em.getComponentId('MeshRenderer');
+  const lightCom = em.getComponentId('Light');
+  const directLightCom = em.getComponentId('DirectLight');
+  const pointLightCom = em.getComponentId('PointLight');
+  const spotLightCom = em.getComponentId('SpotLight');
+
+  // const assetCom = em.getComponentId('Asset');
+
+  const orbitControlCom = em.getComponentId('OrbitControl');
+
+  const fogCom = em.getComponentId('Fog');
+  const ambientLightCom = em.getComponentId('AmbientLight');
+  const backgroundCom = em.getComponentId('Background');
+  const skyCom = em.getComponentId('Sky');
+
+  const geometrySys = world.systemManager.getSystem("GeometrySystem");
+  const materialSys = world.systemManager.getSystem("MaterialSystem");
+  // const phoneMaterialSys = world.systemManager.getSystem("PhongMaterialSystem");
+  // const baseMaterialSys = world.systemManager.getSystem("BaseMaterialSystem");
+  // const phongBaseMaterialSys = world.systemManager.getSystem("PhongBaseMaterialSystem");
+
+  const res = await lm.load([
+    {
+      type: "AmbientLight",
+      url: "https://gw.alipayobjects.com/os/bmw-prod/6470ea5e-094b-4a77-a05f-4945bf81e318.bin",
+    },
+    {
+      //FlightHelmet
+      type: "Prefab",
+      url: "https://cdn.orillusion.com/PBR/FlightHelmet/FlightHelmet.gltf",
+    }
+  ]);
+  // console.log(res[2]);
+  const ambientLightData = res[0];
+
+  const bundle3 = res[1];
+  assetManager.addAssetBundle(bundle3);
+  const scene1Ent = sceneManager.loadSceneEntity(bundle3.defaultSceneRoot.Asset.id);
+
+  //add fog to scene
+  const fog = em.setComponent(scene1Ent, fogCom);
+  fog.fogMode = FogMode.Exponential;
+  fog.fogColor = [0.5, 0.5, 0.5, 1];
+
+  //add background to scene
+  const background = em.setComponent(scene1Ent, backgroundCom);
+  background.solidColor = [1, 1, 1, 1];
+  background.ambientLightRef = ambientLightData.Asset.id;
+
+  //add sky
+  const skyMatData = materialSys.createSkyBoxMaterialData("temp_mat_sky", true);
+  skyMatData.SkyBoxMaterial.textureRef = ambientLightData.AmbientLight.specularTextureRef;
+  // skyMatData.SkyBoxMaterial.tintColor = [1, 0, 0, 1];
+  skyMatData.SkyBoxMaterial.textureDecodeRGBM = true;
+  const skyGeoData = geometrySys.createBoxGeometryData("temp_geo_sky", true);
+  // skyMatData.SkyBoxMaterial.textureRef = ambientLightData.AmbientLight.specularTextureRef;
+
+  const sky = em.setComponent(scene1Ent, skyCom);
+  sky.matRef = skyMatData.Asset.id;
+  sky.geoRef = skyGeoData.Asset.id;
+  // background.ambientLightRef = ambientLightData.Asset.id;
+
+  //add directlight
+  let light1Ent = em.createEntity();
+  let light1Tra = em.setComponentByArgs(light1Ent, com_transform, [0, 0, 0], quat.rotateY([0, 0, 0, 1], [0, 0, 0, 1], Math.PI / 4));
+  em.setComponent(light1Ent, lightCom);
+  em.setComponent(light1Ent, directLightCom);
+
+  //add point light
+  let plight1Ent = em.createEntity();
+  em.setComponentByArgs(plight1Ent, com_transform, [50, 50, -50]);
+  em.setComponentByArgs(plight1Ent, lightCom, [1, 0, 0, 1]);
+  em.setComponent(plight1Ent, pointLightCom);
+  //add spot light
+  let slight1Ent = em.createEntity();
+  em.setComponentByArgs(slight1Ent, com_transform, [0, 50, 0], quat.rotateX([0, 0, 0, 1], [0, 0, 0, 1], -Math.PI / 2));
+  em.setComponentByArgs(slight1Ent, lightCom, [0, 1, 0, 1]);
+  em.setComponent(slight1Ent, spotLightCom);
+
+  //add camera
+  let cameraEntity = em.createEntity();
+  let transform = em.setComponentByArgs(cameraEntity, com_transform, [0, 0, 2]);
+  let camera = em.setComponent(cameraEntity, com_camera);
+  camera.fovY = 1;
+  let orbitControl = em.setComponent(cameraEntity, orbitControlCom);
+  orbitControl.target = [0, 0.35, 0];
+
+  sceneManager.addEntityToScene(light1Ent, scene1Ent);
+  sceneManager.addEntityToScene(plight1Ent, scene1Ent);
+  sceneManager.addEntityToScene(slight1Ent, scene1Ent);
+  sceneManager.addEntityToScene(cameraEntity, scene1Ent);
+
+  let lastTime;
+  function update(time) {
+    if (lastTime === undefined)
+      lastTime = time;
+    let delta = (time - lastTime) / 1000;
+    lastTime = time;
+    world.update(delta);
+    requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+
+  console.log(world);
+
+  function addFogGUI(scene) {
+    let fogStartItem;
+    let fogEndItem;
+    let fogDensityItem;
+    const gui = new dat.GUI();
+
+    let switchMode = (mode) => {
+      switch (mode) {
+        case FogMode.None:
+          clearModeItems();
+          break;
+        case FogMode.Linear:
+          clearModeItems();
+          fogStartItem = gui.add(debugInfos, "fogStart", 0, 300).onChange((v) => {
+            // scene.fogStart = v;
+            sceneFogSys.setFogStart(scene, v);
+          });
+
+          fogEndItem = gui.add(debugInfos, "fogEnd", 0, 300).onChange((v) => {
+            // scene.fogEnd = v;
+            sceneFogSys.setFogEnd(scene, v);
+          });
+          break;
+        case FogMode.Exponential:
+        case FogMode.ExponentialSquared:
+          clearModeItems();
+          fogDensityItem = gui
+            .add(debugInfos, "fogDensity", 0.01, 0.1)
+            .onChange((v) => {
+              // scene.fogDensity = v;
+              sceneFogSys.setFogDensity(scene, v);
+            });
+          break;
+      }
+      // scene.fogMode = mode;
+      sceneFogSys.setFogMode(scene, mode);
+    };
+
+    let clearModeItems = () => {
+      if (fogStartItem) {
+        fogStartItem.remove();
+        fogStartItem = null;
+      }
+      if (fogEndItem) {
+        fogEndItem.remove();
+        fogEndItem = null;
+      }
+      if (fogDensityItem) {
+        fogDensityItem.remove();
+        fogDensityItem = null;
+      }
+    };
+
+    // const fogColor = scene.fogColor;
+    // const fog = em.getComponent(scene, fogCom);
+    const fogColor = fog.fogColor;
+    const debugInfos = {
+      fogMode: fog.fogMode,
+      fogColor: [fogColor[0] * 255, fogColor[1] * 255, fogColor[2] * 255],
+      fogStart: fog.fogStart,
+      fogEnd: fog.fogEnd,
+      fogDensity: fog.fogDensity,
+    };
+
+    gui
+      .add(debugInfos, "fogMode", {
+        None: FogMode.None,
+        Linear: FogMode.Linear,
+        Exponential: FogMode.Exponential,
+        ExponentialSquared: FogMode.ExponentialSquared,
+      })
+      .onChange((v) => {
+        switchMode(parseInt(v));
+      });
+
+    gui.addColor(debugInfos, "fogColor").onChange((v) => {
+      // scene.fogColor.set(v[0] / 255, v[1] / 255, v[2] / 255, 1.0);
+      sceneFogSys.setFogColor(scene, [v[0] / 255, v[1] / 255, v[2] / 255, 1.0]);
+    });
+
+    switchMode(fog.fogMode);
+  }
+  addFogGUI(scene1Ent);
+
+</script>
+
+</html>

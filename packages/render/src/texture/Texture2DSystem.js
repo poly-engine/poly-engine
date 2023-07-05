@@ -1,4 +1,4 @@
-import { System, SystemGroupType } from "@poly-engine/core";
+import { Logger, System, SystemGroupType } from "@poly-engine/core";
 import { TextureUtil } from "./TextureUtil.js";
 import { TextureFormat } from "./TextureFormat.js";
 import { GLUtil } from "../webgl/GLUtil.js";

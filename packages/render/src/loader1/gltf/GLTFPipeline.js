@@ -1,11 +1,11 @@
 import { AssetPromise } from "@poly-engine/asset";
-import { GLTFAnimationParser } from "./parser/GLTFAnimationParser.js";
+// import { GLTFAnimationParser } from "./parser/GLTFAnimationParser.js";
 import { GLTFBufferParser } from "./parser/GLTFBufferParser.js";
 import { GLTFEntityParser } from "./parser/GLTFEntityParser.js";
 import { GLTFMaterialParser } from "./parser/GLTFMaterialParser.js";
 import { GLTFMeshParser } from "./parser/GLTFMeshParser.js";
 import { GLTFSceneParser } from "./parser/GLTFSceneParser.js";
-import { GLTFSkinParser } from "./parser/GLTFSkinParser.js";
+// import { GLTFSkinParser } from "./parser/GLTFSkinParser.js";
 import { GLTFTextureParser } from "./parser/GLTFTextureParser.js";
 import { GLTFValidator } from "./parser/GLTFValidator.js";
 
