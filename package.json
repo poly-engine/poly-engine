@@ -1,6 +1,7 @@
 {
   "name": "poly-engine-root",
   "version": "1.0.0",
+  "packageManager": "pnpm@8.6.2",
   "scripts": {
     "build": "rollup -c",
     "test": "jest"
